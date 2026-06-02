@@ -130,6 +130,27 @@ textarea{resize:vertical;min-height:80px;}
 #sync-status.ok { border-color: rgba(76,175,125,.4); color: var(--green); }
 #sync-status.error { border-color: rgba(201,76,76,.4); color: var(--red); }
 
+/* ═══ PROCESSOS TABS ═══ */
+.proc-sub-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.proc-sub-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:12px 22px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:8px;}
+.proc-sub-tab:hover{color:var(--text);}
+.proc-sub-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.proc-sub-panel{display:none;}
+.proc-sub-panel.active{display:block;}
+
+/* ═══ PROCESSO CARDS ═══ */
+.proc-list{display:flex;flex-direction:column;gap:10px;}
+.proc-card{background:var(--dark-3);border:1px solid var(--border);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:all .15s;}
+.proc-card:hover{border-color:var(--border-s);background:var(--dark-4);transform:translateX(2px);}
+.proc-card-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:#000;flex-shrink:0;}
+.proc-card-info{flex:1;min-width:0;}
+.proc-card-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.proc-card-meta{font-size:11px;color:var(--muted);margin-top:3px;}
+.proc-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+
+/* ═══ PROCESSO STATUS PILLS ═══ */
+.sm-status{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;}
+
 /* ═══ RESPONSIVE MOBILE ═══ */
 * { box-sizing: border-box; }
 img, video, iframe { max-width: 100%; }
@@ -218,6 +239,8 @@ img, video, iframe { max-width: 100%; }
   }
   #neg-board { grid-template-columns: 1fr !important; }
   .section, .card, .modal, .content, .stat-card { max-width: 100%; overflow-x: hidden; }
+  .proc-list { gap: 8px; }
+  .proc-card { padding: 12px 14px; }
 }
 
 @media (max-width: 400px) {
@@ -344,6 +367,7 @@ img, video, iframe { max-width: 100%; }
     <div class="nav-item" onclick="nav('tarefas')"><span class="icon">✅</span> Tarefas <span class="badge" id="badge-tarefas">0</span></div>
     <div class="nav-item" onclick="nav('atendimentos')"><span class="icon">📋</span> Atendimentos</div>
     <div class="nav-item" onclick="nav('vendas')"><span class="icon">💰</span> Vendas / Contratos</div>
+    <div class="nav-item" onclick="nav('processos')"><span class="icon">⚖️</span> Processos</div>
     <div class="nav-item admin-only" onclick="nav('relatorios')"><span class="icon">📈</span> Relatórios</div>
     <div class="nav-item admin-only" onclick="nav('panorama')"><span class="icon">🔭</span> Panorama</div>
     <div class="nav-item admin-only" onclick="nav('financeiro')"><span class="icon">💳</span> Financeiro</div>
@@ -415,15 +439,7 @@ img, video, iframe { max-width: 100%; }
         <table class='mobile-cards'>
           <thead>
             <tr>
-              <th>Colaborador</th>
-              <th>Data</th>
-              <th>Entrada</th>
-              <th>Saída Almoço</th>
-              <th>Volta</th>
-              <th>Saída</th>
-              <th>Total</th>
-              <th>Dispositivo</th>
-              <th>Localização</th>
+              <th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída Almoço</th><th>Volta</th><th>Saída</th><th>Total</th><th>Dispositivo</th><th>Localização</th>
             </tr>
           </thead>
           <tbody id='tbody-ponto'></tbody>
@@ -462,6 +478,49 @@ img, video, iframe { max-width: 100%; }
       <div class="card">
         <div class="card-header"><div class="card-title">Pipeline de Vendas</div><input class="search-input" placeholder="🔍 Buscar..." oninput="filtrarVendas(this.value)"></div>
         <table class='mobile-cards'><thead><tr><th>Data</th><th>Cliente</th><th>Serviço</th><th>Valor</th><th>Pagamento</th><th>Status</th><th></th></tr></thead><tbody id="tbody-vendas"></tbody></table>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PROCESSOS — NOVA SEÇÃO
+    ══════════════════════════════════════════════════════════ -->
+    <section class="section" id="sec-processos">
+
+      <!-- Sub-tabs de tipo de processo -->
+      <div class="proc-sub-tabs">
+        <button class="proc-sub-tab active" id="ptab-sm" onclick="procTab('sm')">
+          🤱 Salário-Maternidade
+          <span class="badge" id="badge-sm" style="background:var(--gold);color:var(--dark);">0</span>
+        </button>
+        <!-- Futuras abas podem ser adicionadas aqui -->
+      </div>
+
+      <!-- PAINEL: SALÁRIO MATERNIDADE -->
+      <div class="proc-sub-panel active" id="ppanel-sm">
+
+        <!-- Filtros + Botão Novo -->
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <input class="search-input" id="sm-busca" placeholder="🔍 Buscar cliente..." oninput="renderSM()" style="width:260px;">
+          <select id="sm-fil-status" class="search-input" style="width:200px;" onchange="renderSM()">
+            <option value="">Todos os Status</option>
+            <option>Ag. Análise INSS</option>
+            <option>Requerimento Feito</option>
+            <option>Concedido - Ag. PG</option>
+            <option>Guia Paga</option>
+            <option>Recurso Administrativo</option>
+            <option>Ação Judicial</option>
+            <option>Encerrado</option>
+            <option>Cancelado</option>
+          </select>
+          <button class="btn btn-gold" onclick="openNovoSM()">+ Novo Processo</button>
+        </div>
+
+        <!-- Estatísticas rápidas -->
+        <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;" id="sm-stats"></div>
+
+        <!-- Lista de processos -->
+        <div class="proc-list" id="sm-list"></div>
+
       </div>
     </section>
 
@@ -579,6 +638,126 @@ img, video, iframe { max-width: 100%; }
 
   </div>
 </main>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: NOVO PROCESSO SM
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="m-sm-novo">
+  <div class="modal" style="width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">🤱 Novo Processo — Salário Maternidade</div>
+      <button class="modal-close" onclick="closeM('m-sm-novo')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Cliente *</label><select id="sm-cli"></select></div>
+      <div class="form-group"><label>Tipo de Benefício *</label>
+        <select id="sm-tipo">
+          <option>Salário-Maternidade INSS</option>
+          <option>Salário-Maternidade Empregada CLT</option>
+          <option>Salário-Maternidade MEI</option>
+          <option>Salário-Maternidade Contribuinte Individual</option>
+          <option>Salário-Maternidade Desempregada</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status do Processo *</label>
+        <select id="sm-status-novo">
+          <option>Ag. Análise INSS</option>
+          <option>Requerimento Feito</option>
+          <option>Concedido - Ag. PG</option>
+          <option>Guia Paga</option>
+          <option>Recurso Administrativo</option>
+          <option>Ação Judicial</option>
+          <option>Encerrado</option>
+          <option>Cancelado</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Número do Processo / Protocolo</label><input type="text" id="sm-num" placeholder="Ex: 48/0123456.7.8/2025-9"></div>
+      <div class="form-group"><label>Fase Processual</label><input type="text" id="sm-fase" placeholder="Ex: Análise administrativa"></div>
+      <div class="form-group"><label>Prazo</label><input type="date" id="sm-prazo"></div>
+      <div class="form-group"><label>Valor da Causa R$</label><input type="number" id="sm-valor" step="0.01" placeholder="0.00"></div>
+      <div class="form-group"><label>Link do Tribunal / INSS</label><input type="text" id="sm-link" placeholder="https://..."></div>
+      <div class="form-group"><label>CPF/CNPJ</label><input type="text" id="sm-cpf" placeholder="000.000.000-00"></div>
+      <div class="form-group"><label>Responsável</label><select id="sm-resp-novo"></select></div>
+      <div class="form-group full"><label>Observações</label><textarea id="sm-obs" placeholder="Informações adicionais sobre o processo..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-sm-novo')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarSM()">Criar Processo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MODAL: FICHA DO PROCESSO SM
+══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="m-sm-ficha" style="align-items:flex-start;padding:20px 0;overflow-y:auto;">
+  <div class="modal" style="width:740px;max-width:98vw;margin:auto;max-height:none;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="smf-nome"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="smf-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeM('m-sm-ficha')">✕</button>
+    </div>
+
+    <!-- Tabs da ficha -->
+    <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;">
+      <button class="ficha-tab active" id="smftab-dados" onclick="smfTab('dados')">📋 Dados do Processo</button>
+      <button class="ficha-tab" id="smftab-acomp" onclick="smfTab('acomp')">🔍 Acompanhamentos</button>
+      <button class="ficha-tab" id="smftab-coment" onclick="smfTab('coment')">💬 Comentários</button>
+    </div>
+
+    <!-- PAINEL: DADOS -->
+    <div id="smfpanel-dados">
+      <div class="form-grid" id="smf-grid"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <span id="smf-save-ok" style="display:none;color:var(--green);font-size:13px;margin-right:4px;">✅ Salvo!</span>
+        <button class="btn btn-danger btn-sm" onclick="deletarSM()" style="margin-right:auto;">🗑 Excluir</button>
+        <button class="btn btn-ghost" onclick="closeM('m-sm-ficha')">Fechar</button>
+        <button class="btn btn-gold" onclick="salvarFichaSM()">Salvar alterações</button>
+      </div>
+    </div>
+
+    <!-- PAINEL: ACOMPANHAMENTOS -->
+    <div id="smfpanel-acomp" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;">Tipo de registro</div>
+        <select id="smf-tipo-acomp" style="width:100%;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:12px;">
+          <option>Requerimento feito</option>
+          <option>Documento enviado</option>
+          <option>Protocolo INSS</option>
+          <option>Análise INSS</option>
+          <option>Decisão administrativa</option>
+          <option>Recurso interposto</option>
+          <option>Audiência</option>
+          <option>Sentença</option>
+          <option>Guia de pagamento gerada</option>
+          <option>Pagamento recebido</option>
+          <option>Atualização processual</option>
+          <option>Ligação com cliente</option>
+          <option>Mensagem enviada</option>
+          <option>Outro</option>
+        </select>
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;">Descrição / Andamento</div>
+        <textarea id="smf-acomp-texto" placeholder="Descreva o andamento, decisão ou ação realizada..." style="width:100%;min-height:100px;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-gold" onclick="smfAddAcomp()">+ Registrar Andamento</button>
+        </div>
+      </div>
+      <div id="smf-acomp-lista" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- PAINEL: COMENTÁRIOS -->
+    <div id="smfpanel-coment" style="display:none;">
+      <div id="smf-coment-lista" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="smf-coment-input" placeholder="Escreva um comentário..." onkeydown="if(event.key==='Enter')smfAddComent()">
+        <button class="btn btn-gold" onclick="smfAddComent()">Enviar</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
 <!-- MODAL DATA PAGAMENTO -->
 <div class="modal-overlay" id="m-data-pagamento">
@@ -810,47 +989,24 @@ function getDeviceInfo() {
 
 function getLocation(callback) {
   var geoEl = document.getElementById('geo-status');
-  if (!navigator.geolocation) {
-    if(geoEl) { geoEl.style.display='none'; }
-    callback(null);
-    return;
-  }
-  if(geoEl) {
-    geoEl.style.display='block';
-    geoEl.innerHTML='📍 <span style="color:var(--gold)">Aguardando permissão de localização...</span>';
-  }
+  if (!navigator.geolocation) { if(geoEl) geoEl.style.display='none'; callback(null); return; }
+  if(geoEl) { geoEl.style.display='block'; geoEl.innerHTML='📍 <span style="color:var(--gold)">Aguardando permissão de localização...</span>'; }
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       if(geoEl) geoEl.innerHTML='📍 <span style="color:var(--green)">Obtendo endereço...</span>';
-      var lat = pos.coords.latitude;
-      var lng = pos.coords.longitude;
+      var lat = pos.coords.latitude; var lng = pos.coords.longitude;
       fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lng)
         .then(function(r){ return r.json(); })
         .then(function(data) {
           var addr = data.address || {};
-          var parts = [
-            addr.road || addr.pedestrian || addr.street || '',
-            addr.house_number || '',
-            addr.suburb || addr.neighbourhood || addr.quarter || '',
-            addr.city || addr.town || addr.municipality || ''
-          ].filter(Boolean);
+          var parts = [addr.road||addr.pedestrian||addr.street||'',addr.house_number||'',addr.suburb||addr.neighbourhood||addr.quarter||'',addr.city||addr.town||addr.municipality||''].filter(Boolean);
           var loc = parts.length ? parts.join(', ') : lat.toFixed(4)+', '+lng.toFixed(4);
           if(geoEl) { geoEl.innerHTML='✅ <span style="color:var(--green)">Localização capturada</span>'; setTimeout(function(){geoEl.style.display='none';},3000); }
           callback(loc);
         })
-        .catch(function() {
-          var loc = lat.toFixed(4)+', '+lng.toFixed(4);
-          if(geoEl) { geoEl.style.display='none'; }
-          callback(loc);
-        });
+        .catch(function() { if(geoEl) geoEl.style.display='none'; callback(lat.toFixed(4)+', '+lng.toFixed(4)); });
     },
-    function(err) {
-      if(geoEl) {
-        geoEl.innerHTML='⚠️ Localização não autorizada';
-        setTimeout(function(){geoEl.style.display='none';},3000);
-      }
-      callback('⚠️ Não autorizada');
-    },
+    function() { if(geoEl) { geoEl.innerHTML='⚠️ Localização não autorizada'; setTimeout(function(){geoEl.style.display='none';},3000); } callback('⚠️ Não autorizada'); },
     { timeout: 10000, maximumAge: 60000 }
   );
 }
@@ -858,57 +1014,17 @@ function getLocation(callback) {
 // ═══════════ FIREBASE CONFIG ═══════════
 const FB_URL = "https://crm-camila-952a5-default-rtdb.firebaseio.com";
 
-// ── CORREÇÃO CRÍTICA: todas as ops do Firebase são separadas por path ──
-// Ponto usa PATCH (merge) por colaborador/data para evitar sobrescrita
-async function fbGet(path) {
-  try {
-    const r = await fetch(FB_URL + '/' + path + '.json');
-    return r.ok ? r.json() : null;
-  } catch(e) { return null; }
-}
-async function fbSet(path, data) {
-  try {
-    const r = await fetch(FB_URL + '/' + path + '.json', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return r.ok;
-  } catch(e) { return false; }
-}
-// ── NOVO: PATCH atômico para ponto — só atualiza campos específicos sem sobrescrever outros ──
-async function fbPatch(path, data) {
-  try {
-    const r = await fetch(FB_URL + '/' + path + '.json', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return r.ok;
-  } catch(e) { return false; }
-}
-async function fbPush(path, data) {
-  try {
-    const r = await fetch(FB_URL + '/' + path + '.json', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return r.ok ? r.json() : null;
-  } catch(e) { return null; }
-}
-async function fbDelete(path) {
-  try { await fetch(FB_URL + '/' + path + '.json', { method: 'DELETE' }); } catch(e) {}
-}
+async function fbGet(path) { try { const r = await fetch(FB_URL+'/'+path+'.json'); return r.ok ? r.json() : null; } catch(e) { return null; } }
+async function fbSet(path, data) { try { const r = await fetch(FB_URL+'/'+path+'.json', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); return r.ok; } catch(e) { return false; } }
+async function fbPatch(path, data) { try { const r = await fetch(FB_URL+'/'+path+'.json', {method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); return r.ok; } catch(e) { return false; } }
+async function fbPush(path, data) { try { const r = await fetch(FB_URL+'/'+path+'.json', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); return r.ok ? r.json() : null; } catch(e) { return null; } }
+async function fbDelete(path) { try { await fetch(FB_URL+'/'+path+'.json', {method:'DELETE'}); } catch(e) {} }
 
-// ── Indicador visual de sync ──
 function showSync(msg, tipo) {
-  const el = document.getElementById('sync-status');
-  if(!el) return;
-  el.textContent = msg;
-  el.className = 'show ' + (tipo||'');
+  const el = document.getElementById('sync-status'); if(!el) return;
+  el.textContent = msg; el.className = 'show '+(tipo||'');
   clearTimeout(el._t);
-  if(tipo === 'ok') el._t = setTimeout(()=>{ el.className=''; }, 3000);
+  if(tipo==='ok') el._t = setTimeout(()=>{ el.className=''; }, 3000);
 }
 
 function showLoader(msg) { const el=document.getElementById('loader'); if(el){el.style.display='flex';document.getElementById('loader-msg').textContent=msg||'Aguarde...';} }
@@ -931,36 +1047,29 @@ if (!S.vendas) S.vendas = [];
 if (!S.ponto) S.ponto = {};
 if (!S.atividades) S.atividades = [];
 if (!S.negociacoes) S.negociacoes = [];
+if (!S.processos_sm) S.processos_sm = [];
 
 const extrasColab = (S.colaboradores || []).filter(c => c.id > 5);
 S.colaboradores = [...COLABS_FIXOS, ...extrasColab];
 
-// ── CORREÇÃO: save() não sincroniza ponto — ponto tem sync próprio e atômico ──
 function save() {
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
   syncToFirebase();
 }
-
-// ── save especial para ponto: não usa debounce e não sincroniza o resto ──
 function savePonto() {
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
-  // NÃO chama syncToFirebase() — ponto já foi enviado atomicamente via fbPatch
 }
 
 let syncTimeout = null;
 function syncToFirebase() {
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async function() {
-    // ── CORREÇÃO: ponto NÃO é sincronizado aqui para evitar sobrescrita ──
     const data = {
-      clientes: S.clientes,
-      tarefas: S.tarefas,
-      atendimentos: S.atendimentos,
-      vendas: S.vendas,
-      atividades: S.atividades.slice(0, 60),
-      negociacoes: S.negociacoes
+      clientes: S.clientes, tarefas: S.tarefas, atendimentos: S.atendimentos,
+      vendas: S.vendas, atividades: S.atividades.slice(0,60),
+      negociacoes: S.negociacoes, processos_sm: S.processos_sm
     };
     showSync('⟳ Sincronizando...', '');
     const ok = await fbSet('crm', data);
@@ -972,41 +1081,30 @@ async function loadFromFirebase() {
   showLoader('Sincronizando dados...');
   const data = await fbGet('crm');
   if (data) {
-    // ── CORREÇÃO: merge dos dados ao invés de sobrescrever ──
     if (data.clientes) S.clientes = data.clientes;
     if (data.tarefas) S.tarefas = data.tarefas;
     if (data.atendimentos) S.atendimentos = data.atendimentos;
     if (data.vendas) S.vendas = data.vendas;
     if (data.atividades) S.atividades = data.atividades;
     if (data.negociacoes) S.negociacoes = data.negociacoes;
-    // ── CORREÇÃO: ponto carregado separadamente com merge ──
-    // NÃO sobrescreve S.ponto aqui
+    if (data.processos_sm) S.processos_sm = data.processos_sm;
   }
-  // ── CORREÇÃO: ponto carregado do path dedicado, com merge dos dados locais ──
   await loadPontoFromFirebase();
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
   hideLoader();
 }
 
-// ── NOVO: carrega ponto do Firebase e faz MERGE com o localStorage (nunca perde dados) ──
 async function loadPontoFromFirebase() {
   const pontoDB = await fbGet('ponto');
   if (pontoDB) {
-    // Merge: para cada data/colaborador do Firebase, preserva o local se for mais completo
     Object.entries(pontoDB).forEach(([data, users]) => {
       if (!S.ponto[data]) S.ponto[data] = {};
       Object.entries(users).forEach(([colab, p]) => {
-        if (!S.ponto[data][colab]) {
-          // Não existe local: usa o do Firebase
-          S.ponto[data][colab] = p;
-        } else {
-          // Existe nos dois: merge campo a campo (prioriza o que tem valor)
+        if (!S.ponto[data][colab]) { S.ponto[data][colab] = p; }
+        else {
           const local = S.ponto[data][colab];
-          const campos = ['entrada','saida_almoco','volta_almoco','saida',
-                          'loc_entrada','loc_saida_almoco','loc_volta_almoco','loc_saida',
-                          'localizacao','dispositivo','navegador'];
-          campos.forEach(function(campo) {
+          ['entrada','saida_almoco','volta_almoco','saida','loc_entrada','loc_saida_almoco','loc_volta_almoco','loc_saida','localizacao','dispositivo','navegador'].forEach(function(campo) {
             if (!local[campo] && p[campo]) local[campo] = p[campo];
           });
         }
@@ -1031,12 +1129,8 @@ async function fazerLogin() {
   await loadFromFirebase();
   atualizarSidebar();
   verificarRetencao();
-  if (isCliente()) {
-    nav('clientes');
-    if (U.clienteId) setTimeout(function(){ abrirFicha(U.clienteId); }, 200);
-  } else {
-    nav('dashboard');
-  }
+  if (isCliente()) { nav('clientes'); if (U.clienteId) setTimeout(function(){ abrirFicha(U.clienteId); }, 200); }
+  else { nav('dashboard'); }
 }
 
 function fazerLogout() {
@@ -1059,8 +1153,7 @@ function meuPonto() {
     Object.entries(S.ponto).forEach(([data,users])=>{ Object.entries(users).forEach(([colab,p])=>{ arr.push({colaborador:colab,data_ponto:data,...p}); }); });
     return arr.sort((a,b)=>b.data_ponto.localeCompare(a.data_ponto));
   }
-  const arr = [];
-  const nome = eu();
+  const arr = []; const nome = eu();
   Object.entries(S.ponto).forEach(([data,users])=>{ if(users[nome]) arr.push({colaborador:nome,data_ponto:data,...users[nome]}); });
   return arr.sort((a,b)=>b.data_ponto.localeCompare(a.data_ponto));
 }
@@ -1084,21 +1177,22 @@ function atualizarSidebar() {
 }
 
 // ═══════════ NAVIGATION ═══════════
-const TITLES={dashboard:'Dashboard',panorama:'Panorama do Escritório',financeiro:'Financeiro',negociacao:'Negociação',ponto:'Ponto Eletrônico',tarefas:'Gestão de Tarefas',atendimentos:'Atendimentos',vendas:'Vendas & Contratos',relatorios:'Relatórios',clientes:'Clientes',colaboradores:'Colaboradores'};
+const TITLES={dashboard:'Dashboard',panorama:'Panorama do Escritório',financeiro:'Financeiro',negociacao:'Negociação',ponto:'Ponto Eletrônico',tarefas:'Gestão de Tarefas',atendimentos:'Atendimentos',vendas:'Vendas & Contratos',relatorios:'Relatórios',clientes:'Clientes',colaboradores:'Colaboradores',processos:'Processos'};
 const ACTIONS={
   tarefas:'<button class="btn btn-gold" onclick="openMT()">+ Nova Tarefa</button>',
   atendimentos:'<button class="btn btn-gold" onclick="openAtend()">+ Registrar</button>',
   vendas:'<button class="btn btn-gold" onclick="openVenda()">+ Nova Venda</button>',
   clientes:'<button class="btn btn-gold" onclick="openM(&quot;m-cliente&quot;)">+ Novo Cliente</button>',
   colaboradores:'<button class="btn btn-gold" onclick="openColab()">+ Novo Colaborador</button>',
+  processos:'<button class="btn btn-gold" onclick="openNovoSM()">+ Novo Processo</button>',
 };
 
 function nav(id) {
-  const el=document.getElementById('sec-'+id);if(!el)return;
+  const el=document.getElementById('sec-'+id); if(!el) return;
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+id+"'"))n.classList.add('active');});
+  document.querySelectorAll('.nav-item').forEach(n=>{ if(n.getAttribute('onclick')?.includes("'"+id+"'")) n.classList.add('active'); });
   document.getElementById('page-title').textContent=TITLES[id]||id;
   document.getElementById('topbar-actions').innerHTML=ACTIONS[id]||'';
   if(id==='dashboard') renderDash();
@@ -1106,6 +1200,7 @@ function nav(id) {
   if(id==='tarefas') renderKanban();
   if(id==='atendimentos') renderAtend();
   if(id==='vendas') renderVendas();
+  if(id==='processos') renderProcessos();
   if(id==='relatorios') initRel();
   if(id==='clientes') renderClientes();
   if(id==='colaboradores') renderColab();
@@ -1124,8 +1219,8 @@ function openM(id){
 }
 function openMT(){fillColabs('t-resp',eu());openM('m-tarefa');}
 function closeM(id){
-  var el=document.getElementById(id);if(!el)return;
-  el.classList.remove('open');el.style.display='';
+  var el=document.getElementById(id); if(!el) return;
+  el.classList.remove('open'); el.style.display='';
   if(id==='m-colab'){el.dataset.editId='';document.getElementById('m-colab-title').textContent='Cadastrar Colaborador';}
   if(id==='m-tarefa'){editTarefaId=null;document.getElementById('m-tarefa-title').textContent='Nova Tarefa';}
 }
@@ -1134,7 +1229,7 @@ function closeM(id){
 function addAtiv(txt) {
   const now=new Date();
   S.atividades.unshift({id:genId(),txt,hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),data_registro:now.toLocaleDateString('pt-BR'),autor:eu()});
-  if(S.atividades.length>60)S.atividades.pop();
+  if(S.atividades.length>60) S.atividades.pop();
   save();
 }
 
@@ -1144,36 +1239,26 @@ function renderDash() {
   const mesLabel = new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   const lbl = document.getElementById('dash-mes-label');
   if(lbl) lbl.textContent = '📅 Resumo de ' + mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1);
-
   document.getElementById('st-cli').textContent=S.clientes.filter(x=>(x.criadoEm||'').startsWith(mes)).length;
   document.getElementById('st-ate').textContent=meusA().filter(a=>(a.data||a.data_atend||'').startsWith(mes)).length;
-
   let recParcelasD=0;
   S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{
-    if(p.pago){
-      const dp=p.dataPag||p.data_pagamento||'';
-      if(dp){
-        const pts=dp.split('/');
-        if(pts.length===3 && pts[2]+'-'+pts[1]===mes) recParcelasD+=parseFloat(p.valor)||0;
-      }
-    }
+    if(p.pago){ const dp=p.dataPag||p.data_pagamento||''; if(dp){ const pts=dp.split('/'); if(pts.length===3&&pts[2]+'-'+pts[1]===mes) recParcelasD+=parseFloat(p.valor)||0; }}
   });});});
   const recVendasD=minhasV().filter(v=>v.status==='fechado'&&(v.data||v.data_venda||'').startsWith(mes)&&(!v.pgto||v.pgto==='À vista'||v.pgto==='PIX')).reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
   const rec=recParcelasD+recVendasD;
-
   document.getElementById('st-rec').textContent=rec>0?'R$'+(rec>=1000?(rec/1000).toFixed(1)+'k':rec.toFixed(0)):'R$0';
   document.getElementById('st-tar-pen').textContent=minhasT().filter(t=>t.status!=='concluido').length;
   document.getElementById('st-tar-con').textContent=minhasT().filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)).length;
   document.getElementById('st-contratos').textContent=minhasV().filter(v=>v.status==='fechado'&&(v.data||v.data_venda||'').startsWith(mes)).length;
   document.getElementById('badge-tarefas').textContent=minhasT().filter(t=>t.status!=='concluido').length;
-
   const ativs=isAdmin()?S.atividades:S.atividades.filter(a=>!a.autor||a.autor===eu());
   document.getElementById('feed-ativ').innerHTML=ativs.slice(0,8).map(a=>`<div class="activity-item"><div class="activity-dot"></div><div><div style="font-size:13px;">${a.txt||a.texto||''}</div><div style="font-size:11px;color:var(--muted);">${a.data_registro||a.data||''} às ${a.hora||''}</div></div></div>`).join('')||'<div class="empty-state"><span class="icon">📭</span>Nenhuma atividade</div>';
   const tp=minhasT().filter(t=>t.status!=='concluido').slice(0,5);
   document.getElementById('feed-tar').innerHTML=tp.map(t=>`<div class="activity-item"><div class="activity-dot" style="background:${t.prioridade==='urgente'?'#C94C4C':t.prioridade==='alta'?'#C9A84C':'#4C7EC9'}"></div><div><div style="font-size:13px;">${t.titulo}</div><div style="font-size:11px;color:var(--muted);">${t.area||''}${t.prazo?' · '+new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR'):''}</div></div></div>`).join('')||'<div class="empty-state"><span class="icon">✅</span>Sem tarefas pendentes</div>';
 }
 
-// ═══════════ PONTO — LÓGICA CORRIGIDA ═══════════
+// ═══════════ PONTO ═══════════
 let clockInt;
 function initClock(){
   clearInterval(clockInt);
@@ -1182,164 +1267,70 @@ function initClock(){
     document.getElementById('clock').textContent=n.toLocaleTimeString('pt-BR');
     document.getElementById('clock-date').textContent=n.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
     if(!document.getElementById('filtro-mes-ponto').value)document.getElementById('filtro-mes-ponto').value=n.toISOString().slice(0,7);
-  };tick();clockInt=setInterval(tick,1000);
+  }; tick(); clockInt=setInterval(tick,1000);
 }
 
-// ── CORREÇÃO CENTRAL DO PONTO ──
-// Estratégia: 
-//   1. Salva imediatamente no localStorage e atualiza UI
-//   2. Envia via fbPatch para o path exato do colaborador/data (atômico, não apaga outros)
-//   3. Geolocalização atualiza o registro DEPOIS via outro fbPatch, sem risco de concorrência
 async function baterPonto(tipo) {
-  const n = new Date();
-  const hoje = n.toISOString().slice(0, 10);
-  const hora = n.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-  const user = eu();
-  const di = getDeviceInfo();
-
-  // 1. Garante estrutura local
+  const n = new Date(); const hoje = n.toISOString().slice(0,10); const hora = n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); const user = eu(); const di = getDeviceInfo();
   if (!S.ponto[hoje]) S.ponto[hoje] = {};
   if (!S.ponto[hoje][user]) S.ponto[hoje][user] = {};
-
-  // 2. Prepara o payload desta batida (só os campos novos)
-  const payload = {};
-  payload[tipo] = hora;
-  payload['dispositivo'] = di.device;
-  payload['navegador'] = di.browser;
-
-  // 3. Atualiza local
-  Object.assign(S.ponto[hoje][user], payload);
-  savePonto(); // salva local sem sync global
-  renderPontoHoje();
-  renderPontoHist();
-
-  // 4. Envia atomicamente para o Firebase no path do colaborador/data
-  //    PATCH = merge, nunca apaga outros colaboradores ou outras batidas do mesmo dia
+  const payload = {}; payload[tipo] = hora; payload['dispositivo'] = di.device; payload['navegador'] = di.browser;
+  Object.assign(S.ponto[hoje][user], payload); savePonto(); renderPontoHoje(); renderPontoHist();
   const pontoPath = 'ponto/' + hoje + '/' + encodeURIComponent(user);
   showSync('⟳ Salvando ponto...', '');
   const ok = await fbPatch(pontoPath, payload);
   showSync(ok ? '✅ Ponto salvo' : '❌ Erro ao salvar ponto', ok ? 'ok' : 'error');
-
-  // 5. Atividade (fire-and-forget via save normal)
-  const L = {entrada:'Entrada', saida_almoco:'Saída Almoço', volta_almoco:'Volta Almoço', saida:'Saída'};
+  const L = {entrada:'Entrada',saida_almoco:'Saída Almoço',volta_almoco:'Volta Almoço',saida:'Saída'};
   S.atividades.unshift({id:genId(),txt:'⏱ Ponto: '+L[tipo]+' às '+hora+' · '+di.device,hora:hora,data_registro:n.toLocaleDateString('pt-BR'),autor:user});
-  if(S.atividades.length>60)S.atividades.pop();
-  save(); // sync do restante dos dados
-
-  // 6. Geolocalização: atualiza DEPOIS de forma independente, sem risco de apagar o ponto
+  if(S.atividades.length>60) S.atividades.pop();
+  save();
   getLocation(function(loc) {
     if (!loc) return;
-    const locPayload = {};
-    locPayload['loc_' + tipo] = loc;
-    // Só define 'localizacao' na primeira batida (entrada) ou se ainda não tiver
-    if (tipo === 'entrada' || !S.ponto[hoje][user].localizacao) {
-      locPayload['localizacao'] = loc;
-    }
-    Object.assign(S.ponto[hoje][user], locPayload);
-    savePonto();
-    renderPontoHist();
-    // Envia localização via PATCH separado (não interfere no ponto já salvo)
-    fbPatch(pontoPath, locPayload);
+    const locPayload = {}; locPayload['loc_'+tipo] = loc;
+    if (tipo==='entrada' || !S.ponto[hoje][user].localizacao) locPayload['localizacao'] = loc;
+    Object.assign(S.ponto[hoje][user], locPayload); savePonto(); renderPontoHist(); fbPatch(pontoPath, locPayload);
   });
 }
 
 function renderPontoHoje(){
-  const hoje=new Date().toISOString().slice(0,10),user=eu();
+  const hoje=new Date().toISOString().slice(0,10), user=eu();
   const p=(S.ponto[hoje]&&S.ponto[hoje][user])||{};
-  document.getElementById('ponto-hoje').innerHTML=[
-    {k:'entrada',l:'▶ Entrada'},{k:'saida_almoco',l:'☕ Saída Almoço'},{k:'volta_almoco',l:'↩ Volta'},{k:'saida',l:'■ Saída'}
-  ].map(f=>`<div class="ponto-item"><div class="ponto-item-label">${f.l}</div><div class="ponto-item-val">${p[f.k]||'--:--'}</div></div>`).join('');
+  document.getElementById('ponto-hoje').innerHTML=[{k:'entrada',l:'▶ Entrada'},{k:'saida_almoco',l:'☕ Saída Almoço'},{k:'volta_almoco',l:'↩ Volta'},{k:'saida',l:'■ Saída'}].map(f=>`<div class="ponto-item"><div class="ponto-item-label">${f.l}</div><div class="ponto-item-val">${p[f.k]||'--:--'}</div></div>`).join('');
 }
 
-function calcHoras(p){
-  if(!p||!p.entrada||!p.saida)return'-';
-  const parse=h=>{const[hh,mm]=h.split(':').map(Number);return hh*60+mm;};
-  let m=parse(p.saida)-parse(p.entrada);
-  if(p.saida_almoco&&p.volta_almoco)m-=(parse(p.volta_almoco)-parse(p.saida_almoco));
-  return m<0?'-':`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-}
+function calcHoras(p){ if(!p||!p.entrada||!p.saida)return'-'; const parse=h=>{const[hh,mm]=h.split(':').map(Number);return hh*60+mm;}; let m=parse(p.saida)-parse(p.entrada); if(p.saida_almoco&&p.volta_almoco)m-=(parse(p.volta_almoco)-parse(p.saida_almoco)); return m<0?'-':`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
 
 function renderPontoHist(){
   const mes=document.getElementById('filtro-mes-ponto').value||new Date().toISOString().slice(0,7);
-  const rows=[];
-  const dados=isAdmin()?S.ponto:Object.fromEntries(Object.entries(S.ponto).map(([d,u])=>[d,{[eu()]:u[eu()]}]).filter(([,u])=>u[eu()]));
+  const rows=[]; const dados=isAdmin()?S.ponto:Object.fromEntries(Object.entries(S.ponto).map(([d,u])=>[d,{[eu()]:u[eu()]}]).filter(([,u])=>u[eu()]));
   Object.entries(dados).filter(([d])=>d.startsWith(mes)).sort(([a],[b])=>b.localeCompare(a)).forEach(([data,users])=>{
     Object.entries(users).filter(([,p])=>p).forEach(([user,p])=>{
-      const devHtml = p.dispositivo
-        ? `<span class="ponto-dev-badge">${p.dispositivo}</span><br><span style="font-size:10px;color:var(--muted);">${p.navegador||''}</span>`
-        : '<span style="color:var(--muted);font-size:11px;">—</span>';
-      const locHtml = p.localizacao
-        ? `<span class="ponto-loc-badge" title="${p.localizacao}">📍 ${p.localizacao.length>30?p.localizacao.substring(0,30)+'...':p.localizacao}</span>`
-        : '<span style="color:var(--muted);font-size:11px;">—</span>';
-      rows.push(`<tr>
-        <td data-label="Colaborador">${user}</td>
-        <td data-label="Data">${new Date(data+'T12:00:00').toLocaleDateString('pt-BR')}</td>
-        <td data-label="Entrada">${p.entrada||'--'}</td>
-        <td data-label="Saída Almoço">${p.saida_almoco||'--'}</td>
-        <td data-label="Volta">${p.volta_almoco||'--'}</td>
-        <td data-label="Saída">${p.saida||'--'}</td>
-        <td data-label="Total"><strong>${calcHoras(p)}</strong></td>
-        <td data-label="Dispositivo">${devHtml}</td>
-        <td data-label="Localização">${locHtml}</td>
-      </tr>`);
+      const devHtml = p.dispositivo ? `<span class="ponto-dev-badge">${p.dispositivo}</span><br><span style="font-size:10px;color:var(--muted);">${p.navegador||''}</span>` : '<span style="color:var(--muted);font-size:11px;">—</span>';
+      const locHtml = p.localizacao ? `<span class="ponto-loc-badge" title="${p.localizacao}">📍 ${p.localizacao.length>30?p.localizacao.substring(0,30)+'...':p.localizacao}</span>` : '<span style="color:var(--muted);font-size:11px;">—</span>';
+      rows.push(`<tr><td data-label="Colaborador">${user}</td><td data-label="Data">${new Date(data+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Entrada">${p.entrada||'--'}</td><td data-label="Saída Almoço">${p.saida_almoco||'--'}</td><td data-label="Volta">${p.volta_almoco||'--'}</td><td data-label="Saída">${p.saida||'--'}</td><td data-label="Total"><strong>${calcHoras(p)}</strong></td><td data-label="Dispositivo">${devHtml}</td><td data-label="Localização">${locHtml}</td></tr>`);
     });
   });
   document.getElementById('tbody-ponto').innerHTML=rows.length?rows.join(''):'<tr><td colspan="9" class="empty-state">Sem registros</td></tr>';
 }
 
 // ═══════════ TAREFAS ═══════════
-let editTarefaId=null,detalheId=null;
+let editTarefaId=null, detalheId=null;
 const PRIOR_TAG={alta:'tag-gold',urgente:'tag-red',normal:'tag-blue',baixa:'tag-muted'};
 
-function fillColabs(selId,val=''){
-  const sel=document.getElementById(selId);if(!sel)return;
-  sel.innerHTML=S.colaboradores.filter(c=>c.perfil!=='cliente').map(c=>`<option value="${c.nome}" ${c.nome===val?'selected':''}>${c.nome}</option>`).join('');
-}
+function fillColabs(selId, val='') { const sel=document.getElementById(selId); if(!sel)return; sel.innerHTML=S.colaboradores.filter(c=>c.perfil!=='cliente').map(c=>`<option value="${c.nome}" ${c.nome===val?'selected':''}>${c.nome}</option>`).join(''); }
 
 function renderKanban(){
   const selResp=document.getElementById('fil-resp');
   if(selResp){const prev=selResp.value;selResp.innerHTML='<option value="">Todos</option>'+S.colaboradores.filter(c=>c.perfil!=='cliente').map(c=>`<option value="${c.nome}"${c.nome===prev?' selected':''}>${c.nome}</option>`).join('');}
-  const fr=document.getElementById('fil-resp')?.value||'';
-  const fp=document.getElementById('fil-prior')?.value||'';
-  const fb=(document.getElementById('fil-busca')?.value||'').toLowerCase();
+  const fr=document.getElementById('fil-resp')?.value||''; const fp=document.getElementById('fil-prior')?.value||''; const fb=(document.getElementById('fil-busca')?.value||'').toLowerCase();
   const COLS=[{k:'aberto',l:'Em Aberto',c:'#C9A84C'},{k:'andamento',l:'Em Andamento',c:'#4C7EC9'},{k:'concluido',l:'Concluído',c:'#4CAF7D'}];
   function ini(nome){if(!nome)return'?';const p=nome.replace('Dra. ','').replace('Dr. ','').split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
   function acor(nome){const cs=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C'];let h=0;for(const c of(nome||''))h=(h*31+c.charCodeAt(0))%cs.length;return cs[h];}
   const hoje=new Date().toISOString().slice(0,10);
   document.getElementById('kanban-board').innerHTML=COLS.map(col=>{
     let tasks=minhasT().filter(t=>t.status===col.k);
-    if(fr)tasks=tasks.filter(t=>t.responsavel===fr);
-    if(fp)tasks=tasks.filter(t=>t.prioridade===fp);
-    if(fb)tasks=tasks.filter(t=>t.titulo.toLowerCase().includes(fb));
-    return`<div class="kanban-col">
-      <div class="kanban-col-header" style="color:${col.c}"><span>${col.l}</span><span class="badge" style="background:${col.c}">${tasks.length}</span></div>
-      <div class="kanban-col-body">
-        ${tasks.map(t=>{
-          const venc=col.k!=='concluido'&&t.prazo&&t.prazo<hoje;
-          const vhj=col.k!=='concluido'&&t.prazo&&t.prazo===hoje;
-          const nc=(t.comentarios||[]).length;
-          return`<div class="task-card" style="${venc?'border-color:rgba(201,76,76,.5);':vhj?'border-color:rgba(201,168,76,.6);':''}" onclick="abrirDetalhe(${t.id})">
-            <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:4px;">
-              <div style="font-size:13px;font-weight:500;">${t.titulo}</div>
-              ${nc?`<span style="font-size:10px;color:var(--muted);white-space:nowrap;">💬${nc}</span>`:''}
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${t.area||''}${t.prazo?` · <span style="color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'}">${new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR')}${venc?' ⚠️':vhj?' (hoje)':''}</span>`:''}</div>
-            ${t.responsavel?`<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><div style="width:24px;height:24px;border-radius:50%;background:${acor(t.responsavel)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;">${ini(t.responsavel)}</div><span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${t.responsavel}</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic;">Sem responsável</div>'}
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span class="tag ${PRIOR_TAG[t.prioridade]||'tag-muted'}">${t.prioridade||'normal'}</span>
-              <div style="display:flex;gap:4px;">
-                ${col.k==='aberto'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'andamento')">▶</button>`:''}
-                ${col.k!=='concluido'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'concluido')">✓</button>`:''}
-                ${col.k!=='aberto'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'aberto')">↩</button>`:''}
-                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirEditT(${t.id})">✏</button>
-                <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delT(${t.id})">🗑</button>
-              </div>
-            </div>
-          </div>`;
-        }).join('')||'<div class="empty-state" style="padding:20px;font-size:12px;">Nenhuma tarefa</div>'}
-        ${col.k==='aberto'?`<button class="btn btn-outline" style="width:100%;margin-top:4px;" onclick="openMT()">+ Adicionar</button>`:''}
-      </div>
-    </div>`;
+    if(fr)tasks=tasks.filter(t=>t.responsavel===fr); if(fp)tasks=tasks.filter(t=>t.prioridade===fp); if(fb)tasks=tasks.filter(t=>t.titulo.toLowerCase().includes(fb));
+    return`<div class="kanban-col"><div class="kanban-col-header" style="color:${col.c}"><span>${col.l}</span><span class="badge" style="background:${col.c}">${tasks.length}</span></div><div class="kanban-col-body">${tasks.map(t=>{const venc=col.k!=='concluido'&&t.prazo&&t.prazo<hoje;const vhj=col.k!=='concluido'&&t.prazo&&t.prazo===hoje;const nc=(t.comentarios||[]).length;return`<div class="task-card" style="${venc?'border-color:rgba(201,76,76,.5);':vhj?'border-color:rgba(201,168,76,.6);':''}" onclick="abrirDetalhe(${t.id})"><div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:4px;"><div style="font-size:13px;font-weight:500;">${t.titulo}</div>${nc?`<span style="font-size:10px;color:var(--muted);white-space:nowrap;">💬${nc}</span>`:''}</div><div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${t.area||''}${t.prazo?` · <span style="color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'}">${new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR')}${venc?' ⚠️':vhj?' (hoje)':''}</span>`:''}</div>${t.responsavel?`<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><div style="width:24px;height:24px;border-radius:50%;background:${acor(t.responsavel)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;">${ini(t.responsavel)}</div><span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${t.responsavel}</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic;">Sem responsável</div>'}<div style="display:flex;justify-content:space-between;align-items:center;"><span class="tag ${PRIOR_TAG[t.prioridade]||'tag-muted'}">${t.prioridade||'normal'}</span><div style="display:flex;gap:4px;">${col.k==='aberto'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'andamento')">▶</button>`:''}${col.k!=='concluido'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'concluido')">✓</button>`:''}${col.k!=='aberto'?`<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();moverT(${t.id},'aberto')">↩</button>`:''}<button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirEditT(${t.id})">✏</button><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();delT(${t.id})">🗑</button></div></div></div>`;}).join('')||'<div class="empty-state" style="padding:20px;font-size:12px;">Nenhuma tarefa</div>'}<button class="btn btn-outline" style="width:100%;margin-top:4px;" onclick="openMT()">+ Adicionar</button></div></div>`;
   }).join('');
 }
 
@@ -1347,90 +1338,49 @@ function moverT(id,status){const t=S.tarefas.find(x=>x.id===id);if(t){t.status=s
 function delT(id){S.tarefas=S.tarefas.filter(x=>x.id!==id);save();renderKanban();renderDash();}
 
 function salvarTarefa(){
-  const titulo=document.getElementById('t-titulo').value.trim();if(!titulo)return;
-  if(editTarefaId){
-    const t=S.tarefas.find(x=>x.id===editTarefaId);
-    if(t){t.titulo=titulo;t.responsavel=document.getElementById('t-resp').value;t.prazo=document.getElementById('t-prazo').value||null;t.prioridade=document.getElementById('t-prior').value;t.area=document.getElementById('t-area').value;t.obs=document.getElementById('t-obs').value;}
-  } else {
-    S.tarefas.unshift({id:genId(),titulo,responsavel:document.getElementById('t-resp').value,prazo:document.getElementById('t-prazo').value||null,prioridade:document.getElementById('t-prior').value,area:document.getElementById('t-area').value,obs:document.getElementById('t-obs').value,status:'aberto',criadoPor:eu(),criadoEm:new Date().toISOString(),comentarios:[]});
-    addAtiv('✅ Tarefa: '+titulo);
-  }
-  save();closeM('m-tarefa');renderKanban();renderDash();
-  document.getElementById('t-titulo').value='';document.getElementById('t-prazo').value='';document.getElementById('t-obs').value='';
+  const titulo=document.getElementById('t-titulo').value.trim(); if(!titulo)return;
+  if(editTarefaId){ const t=S.tarefas.find(x=>x.id===editTarefaId); if(t){t.titulo=titulo;t.responsavel=document.getElementById('t-resp').value;t.prazo=document.getElementById('t-prazo').value||null;t.prioridade=document.getElementById('t-prior').value;t.area=document.getElementById('t-area').value;t.obs=document.getElementById('t-obs').value;} }
+  else { S.tarefas.unshift({id:genId(),titulo,responsavel:document.getElementById('t-resp').value,prazo:document.getElementById('t-prazo').value||null,prioridade:document.getElementById('t-prior').value,area:document.getElementById('t-area').value,obs:document.getElementById('t-obs').value,status:'aberto',criadoPor:eu(),criadoEm:new Date().toISOString(),comentarios:[]}); addAtiv('✅ Tarefa: '+titulo); }
+  save(); closeM('m-tarefa'); renderKanban(); renderDash();
+  document.getElementById('t-titulo').value=''; document.getElementById('t-prazo').value=''; document.getElementById('t-obs').value='';
 }
 
-function abrirEditT(id){
-  const t=S.tarefas.find(x=>x.id===id);if(!t)return;
-  editTarefaId=id;
-  document.getElementById('m-tarefa-title').textContent='Editar Tarefa';
-  document.getElementById('t-titulo').value=t.titulo;
-  document.getElementById('t-prazo').value=t.prazo||'';
-  document.getElementById('t-prior').value=t.prioridade||'normal';
-  document.getElementById('t-area').value=t.area||'Trabalhista';
-  document.getElementById('t-obs').value=t.obs||'';
-  fillColabs('t-resp',t.responsavel);
-  openM('m-tarefa');
-}
+function abrirEditT(id){ const t=S.tarefas.find(x=>x.id===id); if(!t)return; editTarefaId=id; document.getElementById('m-tarefa-title').textContent='Editar Tarefa'; document.getElementById('t-titulo').value=t.titulo; document.getElementById('t-prazo').value=t.prazo||''; document.getElementById('t-prior').value=t.prioridade||'normal'; document.getElementById('t-area').value=t.area||'Trabalhista'; document.getElementById('t-obs').value=t.obs||''; fillColabs('t-resp',t.responsavel); openM('m-tarefa'); }
 
 function abrirDetalhe(id){
-  const t=S.tarefas.find(x=>x.id===id);if(!t)return;
-  detalheId=id;
+  const t=S.tarefas.find(x=>x.id===id); if(!t)return; detalheId=id;
   if(!t.comentarios)t.comentarios=[];
   document.getElementById('dt-titulo').textContent=t.titulo;
   const PTAG={alta:'tag-gold',urgente:'tag-red',normal:'tag-blue',baixa:'tag-muted'};
   document.getElementById('dt-tags').innerHTML=`<span class="tag ${PTAG[t.prioridade]||'tag-muted'}">${t.prioridade||'normal'}</span><span class="tag tag-blue">${t.area||''}</span><span class="tag ${t.status==='concluido'?'tag-green':t.status==='andamento'?'tag-blue':'tag-gold'}">${{concluido:'Concluído',andamento:'Em Andamento',aberto:'Em Aberto'}[t.status]||t.status}</span>${t.prazo?`<span class="tag tag-muted">📅 ${new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR')}</span>`:''}`;
-  function pc(label,nome,icon){
-    const cols=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C'];
-    if(!nome)return`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">${icon} ${label}</div><div style="font-size:12px;color:var(--muted);font-style:italic;">Não informado</div></div>`;
-    let h=0;for(const c of nome)h=(h*31+c.charCodeAt(0))%cols.length;
-    const p=nome.replace('Dra. ','').replace('Dr. ','').split(' ');
-    return`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${icon} ${label}</div><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:${cols[h]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;">${(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase()}</div><span style="font-size:13px;">${nome}</span></div></div>`;
-  }
+  function pc(label,nome,icon){ const cols=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C']; if(!nome)return`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;">${icon} ${label}</div><div style="font-size:12px;color:var(--muted);font-style:italic;">Não informado</div></div>`; let h=0;for(const c of nome)h=(h*31+c.charCodeAt(0))%cols.length; const p=nome.replace('Dra. ','').replace('Dr. ','').split(' '); return`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:12px;"><div style="font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">${icon} ${label}</div><div style="display:flex;align-items:center;gap:8px;"><div style="width:28px;height:28px;border-radius:50%;background:${cols[h]};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#000;">${(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase()}</div><span style="font-size:13px;">${nome}</span></div></div>`; }
   document.getElementById('dt-pessoas').innerHTML=pc('Responsável',t.responsavel,'👤')+pc('Criado por',t.criadoPor||eu(),'✍️');
   if(t.obs&&t.obs.trim()){document.getElementById('dt-obs-wrap').style.display='block';document.getElementById('dt-obs').textContent=t.obs;}
   else document.getElementById('dt-obs-wrap').style.display='none';
-  renderComents(t);
-  openM('m-detalhe-tarefa');
+  renderComents(t); openM('m-detalhe-tarefa');
 }
 
-function renderComents(t){
-  const cs=t.comentarios||[];
-  document.getElementById('dt-coments').innerHTML=cs.length?cs.map(c=>`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:11px;font-weight:600;color:var(--gold);">${c.autor}</span><span style="font-size:10px;color:var(--muted);">${c.data_registro||c.data} ${c.hora}</span></div><div style="font-size:13px;">${c.texto}</div></div>`).join(''):'<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0;">Nenhum comentário.</div>';
-}
+function renderComents(t){ const cs=t.comentarios||[]; document.getElementById('dt-coments').innerHTML=cs.length?cs.map(c=>`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:11px;font-weight:600;color:var(--gold);">${c.autor}</span><span style="font-size:10px;color:var(--muted);">${c.data_registro||c.data} ${c.hora}</span></div><div style="font-size:13px;">${c.texto}</div></div>`).join(''):'<div style="font-size:12px;color:var(--muted);font-style:italic;padding:8px 0;">Nenhum comentário.</div>'; }
 
-function addComent(){
-  const txt=document.getElementById('dt-coment-input').value.trim();if(!txt)return;
-  const t=S.tarefas.find(x=>x.id===detalheId);if(!t)return;
-  if(!t.comentarios)t.comentarios=[];
-  const n=new Date();
-  t.comentarios.push({id:genId(),texto:txt,autor:eu(),data_registro:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
-  save();document.getElementById('dt-coment-input').value='';renderComents(t);renderKanban();
-}
-function editarTarefaDetalhe(){closeM('m-detalhe-tarefa');abrirEditT(detalheId);}
+function addComent(){ const txt=document.getElementById('dt-coment-input').value.trim(); if(!txt)return; const t=S.tarefas.find(x=>x.id===detalheId); if(!t)return; if(!t.comentarios)t.comentarios=[]; const n=new Date(); t.comentarios.push({id:genId(),texto:txt,autor:eu(),data_registro:n.toLocaleDateString('pt-BR'),hora:n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}); save(); document.getElementById('dt-coment-input').value=''; renderComents(t); renderKanban(); }
+function editarTarefaDetalhe(){ closeM('m-detalhe-tarefa'); abrirEditT(detalheId); }
 
 // ═══════════ ATENDIMENTOS ═══════════
 let filtroA='';
 function filtrarAtend(v){filtroA=v.toLowerCase();renderAtend();}
 function openAtend(){fillClientes('a-cli');fillColabs('a-resp',eu());document.getElementById('a-data').value=new Date().toISOString().slice(0,10);openM('m-atend');}
 function salvarAtend(){
-  const cli=document.getElementById('a-cli').value,res=document.getElementById('a-resumo').value.trim();
-  if(!cli||!res)return;
-  const cn=S.clientes.find(c=>String(c.id)===String(cli))?.nome||cli;
-  const now=new Date();
+  const cli=document.getElementById('a-cli').value, res=document.getElementById('a-resumo').value.trim(); if(!cli||!res)return;
+  const cn=S.clientes.find(c=>String(c.id)===String(cli))?.nome||cli; const now=new Date();
   const a={id:genId(),clienteId:cli,clienteNome:cn,data:document.getElementById('a-data').value,data_atend:document.getElementById('a-data').value,tipo:document.getElementById('a-tipo').value,responsavel:document.getElementById('a-resp').value,resumo:res,status:document.getElementById('a-status').value,area:document.getElementById('a-area').value,criadoPor:eu()};
-  S.atendimentos.unshift(a);
-  addAtiv('📋 Atendimento: '+cn);
+  S.atendimentos.unshift(a); addAtiv('📋 Atendimento: '+cn);
   const c=S.clientes.find(x=>String(x.id)===String(cli));
   if(c){if(!c.acompanhamentos)c.acompanhamentos=[];c.acompanhamentos.unshift({id:genId(),tipo:a.tipo,texto:res,autor:eu(),dia_semana:now.toLocaleDateString('pt-BR',{weekday:'long'}),data_registro:now.toLocaleDateString('pt-BR'),hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});}
-  save();closeM('m-atend');renderAtend();
-  document.getElementById('a-resumo').value='';
+  save(); closeM('m-atend'); renderAtend(); document.getElementById('a-resumo').value='';
 }
 const ST_TAG={concluido:'tag-green',pendente:'tag-gold',acompanhamento:'tag-blue'};
 const ST_LBL={concluido:'Concluído',pendente:'Pendente',acompanhamento:'Acompanhamento'};
-function renderAtend(){
-  const list=meusA().filter(a=>!filtroA||a.clienteNome?.toLowerCase().includes(filtroA)||a.resumo?.toLowerCase().includes(filtroA));
-  document.getElementById('tbody-atend').innerHTML=list.length?list.map(a=>`<tr><td data-label="Data">${(a.data||a.data_atend)?new Date((a.data||a.data_atend)+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td data-label="Cliente" style="font-weight:600">${a.clienteNome}</td><td data-label="Tipo">${a.tipo||'-'}</td><td data-label="Responsável" style="color:var(--muted)">${a.responsavel||'-'}</td><td data-label="Resumo">${a.resumo}</td><td data-label="Status"><span class="tag ${ST_TAG[a.status]||'tag-muted'}">${ST_LBL[a.status]||a.status}</span></td><td data-label=""><button class="btn btn-danger btn-sm" onclick="delA(${a.id})">🗑</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-state">Nenhum atendimento</td></tr>';
-}
+function renderAtend(){ const list=meusA().filter(a=>!filtroA||a.clienteNome?.toLowerCase().includes(filtroA)||a.resumo?.toLowerCase().includes(filtroA)); document.getElementById('tbody-atend').innerHTML=list.length?list.map(a=>`<tr><td data-label="Data">${(a.data||a.data_atend)?new Date((a.data||a.data_atend)+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td data-label="Cliente" style="font-weight:600">${a.clienteNome}</td><td data-label="Tipo">${a.tipo||'-'}</td><td data-label="Responsável" style="color:var(--muted)">${a.responsavel||'-'}</td><td data-label="Resumo">${a.resumo}</td><td data-label="Status"><span class="tag ${ST_TAG[a.status]||'tag-muted'}">${ST_LBL[a.status]||a.status}</span></td><td data-label=""><button class="btn btn-danger btn-sm" onclick="delA(${a.id})">🗑</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-state">Nenhum atendimento</td></tr>'; }
 function delA(id){S.atendimentos=S.atendimentos.filter(a=>a.id!==id);save();renderAtend();}
 
 // ═══════════ VENDAS ═══════════
@@ -1438,32 +1388,338 @@ let filtroV='';
 function filtrarVendas(v){filtroV=v.toLowerCase();renderVendas();}
 function openVenda(){fillClientes('v-cli');document.getElementById('v-data').value=new Date().toISOString().slice(0,10);openM('m-venda');}
 function salvarVenda(){
-  const cli=document.getElementById('v-cli').value,serv=document.getElementById('v-serv').value.trim(),val=parseFloat(document.getElementById('v-valor').value);
-  if(!cli||!serv||isNaN(val))return;
+  const cli=document.getElementById('v-cli').value, serv=document.getElementById('v-serv').value.trim(), val=parseFloat(document.getElementById('v-valor').value); if(!cli||!serv||isNaN(val))return;
   const cn=S.clientes.find(c=>String(c.id)===String(cli))?.nome||cli;
   S.vendas.unshift({id:genId(),clienteId:cli,clienteNome:cn,servico:serv,valor:val,data:document.getElementById('v-data').value,data_venda:document.getElementById('v-data').value,pgto:document.getElementById('v-pgto').value,forma_pagamento:document.getElementById('v-pgto').value,status:document.getElementById('v-status').value,obs:document.getElementById('v-obs').value,criadoPor:eu(),responsavel:eu()});
-  addAtiv('💰 Venda: '+cn+' — R$'+val.toLocaleString('pt-BR',{minimumFractionDigits:2}));
-  save();closeM('m-venda');renderVendas();
-  document.getElementById('v-serv').value='';document.getElementById('v-valor').value='';document.getElementById('v-obs').value='';
+  addAtiv('💰 Venda: '+cn+' — R$'+val.toLocaleString('pt-BR',{minimumFractionDigits:2})); save(); closeM('m-venda'); renderVendas();
+  document.getElementById('v-serv').value=''; document.getElementById('v-valor').value=''; document.getElementById('v-obs').value='';
 }
 const V_TAG={fechado:'tag-green',negociacao:'tag-gold',proposta:'tag-blue',cancelado:'tag-red'};
 const V_LBL={fechado:'Fechado ✅',negociacao:'Negociação',proposta:'Proposta',cancelado:'Cancelado'};
 function renderVendas(){
-  const mes=new Date().toISOString().slice(0,7);
-  const list=minhasV().filter(v=>!filtroV||v.clienteNome?.toLowerCase().includes(filtroV)||v.servico?.toLowerCase().includes(filtroV));
-  const fechMes=minhasV().filter(v=>v.status==='fechado'&&(v.data||v.data_venda||'').startsWith(mes));
-  const rec=fechMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
+  const mes=new Date().toISOString().slice(0,7); const list=minhasV().filter(v=>!filtroV||v.clienteNome?.toLowerCase().includes(filtroV)||v.servico?.toLowerCase().includes(filtroV));
+  const fechMes=minhasV().filter(v=>v.status==='fechado'&&(v.data||v.data_venda||'').startsWith(mes)); const rec=fechMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
   const mesLabel=new Date().toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   document.getElementById('v-tot').textContent=minhasV().filter(v=>(v.data||v.data_venda||'').startsWith(mes)).length;
   document.getElementById('v-rec').textContent='R$'+rec.toLocaleString('pt-BR',{minimumFractionDigits:2});
   document.getElementById('v-neg').textContent=minhasV().filter(v=>(v.status==='negociacao'||v.status==='proposta')).length;
-  const labTot=document.querySelector('#sec-vendas .stat-card:nth-child(1) .stat-label');
-  const labRec=document.querySelector('#sec-vendas .stat-card:nth-child(2) .stat-label');
-  if(labTot)labTot.textContent='Contratos ('+mesLabel+')';
-  if(labRec)labRec.textContent='Receita ('+mesLabel+')';
   document.getElementById('tbody-vendas').innerHTML=list.length?list.map(v=>`<tr><td data-label="Data">${(v.data||v.data_venda)?new Date((v.data||v.data_venda)+'T12:00:00').toLocaleDateString('pt-BR'):'-'}</td><td data-label="Cliente" style="font-weight:600">${v.clienteNome}</td><td data-label="Serviço">${v.servico}</td><td data-label="Valor" style="color:var(--gold);font-weight:600;">R$ ${parseFloat(v.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Pagamento" style="color:var(--muted)">${v.pgto||v.forma_pagamento||'-'}</td><td data-label="Status"><span class="tag ${V_TAG[v.status]||'tag-muted'}">${V_LBL[v.status]||v.status}</span></td><td data-label=""><button class="btn btn-danger btn-sm" onclick="delV(${v.id})">🗑</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-state">Nenhuma venda</td></tr>';
 }
 function delV(id){S.vendas=S.vendas.filter(v=>v.id!==id);save();renderVendas();}
+
+// ═══════════════════════════════════════════
+// ═══ PROCESSOS — SALÁRIO MATERNIDADE ═══════
+// ═══════════════════════════════════════════
+
+const SM_STATUS_CONFIG = {
+  'Ag. Análise INSS':        {bg:'rgba(76,126,201,.18)',  color:'#4C7EC9',  border:'rgba(76,126,201,.4)'},
+  'Requerimento Feito':      {bg:'rgba(201,168,76,.18)',  color:'#C9A84C',  border:'rgba(201,168,76,.4)'},
+  'Concedido - Ag. PG':      {bg:'rgba(76,175,125,.18)',  color:'#4CAF7D',  border:'rgba(76,175,125,.4)'},
+  'Guia Paga':               {bg:'rgba(76,175,125,.25)',  color:'#4CAF7D',  border:'rgba(76,175,125,.6)'},
+  'Recurso Administrativo':  {bg:'rgba(201,76,154,.18)',  color:'#C94C9A',  border:'rgba(201,76,154,.4)'},
+  'Ação Judicial':           {bg:'rgba(201,76,76,.18)',   color:'#C94C4C',  border:'rgba(201,76,76,.4)'},
+  'Encerrado':               {bg:'rgba(138,130,120,.18)', color:'#8A8278',  border:'rgba(138,130,120,.4)'},
+  'Cancelado':               {bg:'rgba(201,76,76,.12)',   color:'#C94C4C',  border:'rgba(201,76,76,.3)'},
+};
+
+function smStatusTag(status) {
+  const cfg = SM_STATUS_CONFIG[status] || {bg:'var(--dark-5)',color:'var(--muted)',border:'var(--border)'};
+  return `<span style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:${cfg.bg};color:${cfg.color};border:1px solid ${cfg.border};">${status||'—'}</span>`;
+}
+
+function smAvatarColor(nome) {
+  const cols=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C'];
+  let h=0; for(const c of(nome||'')) h=(h*31+c.charCodeAt(0))%cols.length; return cols[h];
+}
+
+function smIni(nome) {
+  if(!nome) return '?';
+  const p = nome.replace('Dra. ','').replace('Dr. ','').split(' ');
+  return (p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();
+}
+
+let smFichaId = null;
+
+function procTab(tab) {
+  document.querySelectorAll('.proc-sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.proc-sub-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('ptab-'+tab).classList.add('active');
+  document.getElementById('ppanel-'+tab).classList.add('active');
+}
+
+function renderProcessos() {
+  renderSM();
+}
+
+function renderSM() {
+  if(!S.processos_sm) S.processos_sm = [];
+  const busca = (document.getElementById('sm-busca')?.value||'').toLowerCase();
+  const filStatus = document.getElementById('sm-fil-status')?.value||'';
+
+  let list = isAdmin() ? S.processos_sm : S.processos_sm.filter(p=>p.responsavel===eu()||p.criadoPor===eu());
+  if(busca) list = list.filter(p => p.clienteNome?.toLowerCase().includes(busca) || p.num?.toLowerCase().includes(busca));
+  if(filStatus) list = list.filter(p => p.status === filStatus);
+
+  // Atualizar badge
+  const badge = document.getElementById('badge-sm');
+  if(badge) badge.textContent = S.processos_sm.length;
+
+  // Stats
+  const total = S.processos_sm.length;
+  const ativos = S.processos_sm.filter(p=>!['Encerrado','Cancelado'].includes(p.status)).length;
+  const concedidos = S.processos_sm.filter(p=>p.status==='Concedido - Ag. PG'||p.status==='Guia Paga').length;
+  const aguardando = S.processos_sm.filter(p=>p.status==='Ag. Análise INSS').length;
+  document.getElementById('sm-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Processos</div><div class="stat-val">${total}</div><div class="stat-icon">⚖️</div></div>
+    <div class="stat-card"><div class="stat-label">Ativos</div><div class="stat-val" style="color:var(--blue);">${ativos}</div><div class="stat-icon">🔄</div></div>
+    <div class="stat-card"><div class="stat-label">Concedidos</div><div class="stat-val" style="color:var(--green);">${concedidos}</div><div class="stat-icon">✅</div></div>
+    <div class="stat-card"><div class="stat-label">Ag. Análise</div><div class="stat-val" style="color:var(--gold);">${aguardando}</div><div class="stat-icon">⏳</div></div>
+  `;
+
+  // Lista
+  const container = document.getElementById('sm-list');
+  if(!list.length) {
+    container.innerHTML='<div class="empty-state"><span class="icon">⚖️</span>Nenhum processo cadastrado.<br><br><button class="btn btn-gold" onclick="openNovoSM()" style="margin-top:8px;">+ Cadastrar Primeiro Processo</button></div>';
+    return;
+  }
+
+  container.innerHTML = list.map(proc => {
+    const acomp = (proc.acompanhamentos||[]).length;
+    const coment = (proc.comentarios||[]).length;
+    const cor = smAvatarColor(proc.clienteNome);
+    const ini = smIni(proc.clienteNome);
+    const prazoStr = proc.prazo ? new Date(proc.prazo+'T12:00:00').toLocaleDateString('pt-BR') : '';
+    const hoje = new Date().toISOString().slice(0,10);
+    const vencido = proc.prazo && proc.prazo < hoje && !['Encerrado','Cancelado','Guia Paga'].includes(proc.status);
+    return `
+      <div class="proc-card" onclick="abrirFichaSM(${proc.id})">
+        <div class="proc-card-avatar" style="background:${cor};">${ini}</div>
+        <div class="proc-card-info">
+          <div class="proc-card-name">${proc.clienteNome}</div>
+          <div class="proc-card-meta">
+            ${proc.tipo||'Salário-Maternidade'}
+            ${proc.num ? ' · <span style="color:var(--gold)">Nº '+proc.num+'</span>' : ''}
+            ${proc.responsavel ? ' · '+proc.responsavel.split(' ')[0] : ''}
+          </div>
+        </div>
+        <div class="proc-card-right">
+          ${smStatusTag(proc.status)}
+          <div style="display:flex;gap:10px;font-size:11px;color:var(--muted);margin-top:4px;align-items:center;">
+            ${acomp ? `<span>🔍 ${acomp}</span>` : ''}
+            ${coment ? `<span>💬 ${coment}</span>` : ''}
+            ${prazoStr ? `<span style="color:${vencido?'var(--red)':'var(--muted)'};">📅 ${prazoStr}${vencido?' ⚠️':''}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openNovoSM() {
+  fillClientes('sm-cli');
+  fillColabs('sm-resp-novo', eu());
+  document.getElementById('sm-num').value='';
+  document.getElementById('sm-fase').value='';
+  document.getElementById('sm-prazo').value='';
+  document.getElementById('sm-valor').value='';
+  document.getElementById('sm-link').value='';
+  document.getElementById('sm-cpf').value='';
+  document.getElementById('sm-obs').value='';
+  openM('m-sm-novo');
+}
+
+function salvarSM() {
+  const cliId = document.getElementById('sm-cli').value;
+  if(!cliId) return;
+  const cli = S.clientes.find(x=>String(x.id)===String(cliId));
+  if(!cli) return;
+  // Auto-preenche CPF do cliente se disponível
+  const cpfField = document.getElementById('sm-cpf');
+  if(!cpfField.value && cli.cpf) cpfField.value = cli.cpf;
+
+  const proc = {
+    id: genId(),
+    clienteId: cliId,
+    clienteNome: cli.nome,
+    tipo: document.getElementById('sm-tipo').value,
+    status: document.getElementById('sm-status-novo').value,
+    num: document.getElementById('sm-num').value.trim(),
+    fase: document.getElementById('sm-fase').value.trim(),
+    prazo: document.getElementById('sm-prazo').value || null,
+    valor: document.getElementById('sm-valor').value ? parseFloat(document.getElementById('sm-valor').value) : null,
+    link: document.getElementById('sm-link').value.trim(),
+    cpf: cpfField.value.trim(),
+    responsavel: document.getElementById('sm-resp-novo').value,
+    obs: document.getElementById('sm-obs').value.trim(),
+    criadoPor: eu(),
+    criadoEm: new Date().toISOString(),
+    acompanhamentos: [],
+    comentarios: []
+  };
+  if(!S.processos_sm) S.processos_sm = [];
+  S.processos_sm.unshift(proc);
+  addAtiv('⚖️ Processo SM: '+cli.nome);
+  save();
+  closeM('m-sm-novo');
+  renderSM();
+}
+
+function abrirFichaSM(id) {
+  const proc = S.processos_sm.find(x=>x.id===id);
+  if(!proc) return;
+  smFichaId = id;
+  if(!proc.acompanhamentos) proc.acompanhamentos = [];
+  if(!proc.comentarios) proc.comentarios = [];
+
+  document.getElementById('smf-nome').textContent = proc.clienteNome;
+  document.getElementById('smf-sub').textContent = [proc.tipo, proc.num?'Nº '+proc.num:'', proc.responsavel?'Resp: '+proc.responsavel:''].filter(Boolean).join(' · ');
+
+  // Monta grid de dados editáveis
+  document.getElementById('smf-grid').innerHTML = `
+    <div class="form-group"><label>Cliente</label><input type="text" id="se-nome" value="${(proc.clienteNome||'').replace(/"/g,'&quot;')}" readonly style="opacity:.6;cursor:default;"></div>
+    <div class="form-group"><label>Tipo de Benefício</label>
+      <select id="se-tipo">${['Salário-Maternidade INSS','Salário-Maternidade Empregada CLT','Salário-Maternidade MEI','Salário-Maternidade Contribuinte Individual','Salário-Maternidade Desempregada'].map(o=>`<option${proc.tipo===o?' selected':''}>${o}</option>`).join('')}</select>
+    </div>
+    <div class="form-group"><label>Status do Processo *</label>
+      <select id="se-status">${Object.keys(SM_STATUS_CONFIG).map(o=>`<option${proc.status===o?' selected':''}>${o}</option>`).join('')}</select>
+    </div>
+    <div class="form-group"><label>Número / Protocolo</label><input type="text" id="se-num" value="${(proc.num||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label>Fase Processual</label><input type="text" id="se-fase" value="${(proc.fase||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label>Prazo</label><input type="date" id="se-prazo" value="${proc.prazo||''}"></div>
+    <div class="form-group"><label>Valor da Causa R$</label><input type="number" id="se-valor" value="${proc.valor||''}" step="0.01"></div>
+    <div class="form-group"><label>Link do Tribunal / INSS</label><input type="text" id="se-link" value="${(proc.link||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label>CPF/CNPJ</label><input type="text" id="se-cpf" value="${(proc.cpf||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label>Responsável</label><select id="se-resp">${S.colaboradores.filter(c=>c.perfil!=='cliente').map(c=>`<option value="${c.nome}"${proc.responsavel===c.nome?' selected':''}>${c.nome}</option>`).join('')}</select></div>
+    <div class="form-group full"><label>Observações</label><textarea id="se-obs">${proc.obs||''}</textarea></div>
+  `;
+
+  smfTab('dados');
+  openM('m-sm-ficha');
+}
+
+function smfTab(tab) {
+  ['dados','acomp','coment'].forEach(t => {
+    document.getElementById('smfpanel-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('smftab-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='acomp') smfRenderAcomp();
+  if(tab==='coment') smfRenderComent();
+}
+
+function salvarFichaSM() {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  proc.tipo = document.getElementById('se-tipo').value;
+  proc.status = document.getElementById('se-status').value;
+  proc.num = document.getElementById('se-num').value.trim();
+  proc.fase = document.getElementById('se-fase').value.trim();
+  proc.prazo = document.getElementById('se-prazo').value || null;
+  const v = document.getElementById('se-valor').value;
+  proc.valor = v ? parseFloat(v) : null;
+  proc.link = document.getElementById('se-link').value.trim();
+  proc.cpf = document.getElementById('se-cpf').value.trim();
+  proc.responsavel = document.getElementById('se-resp').value;
+  proc.obs = document.getElementById('se-obs').value.trim();
+  save();
+  renderSM();
+  document.getElementById('smf-sub').textContent = [proc.tipo, proc.num?'Nº '+proc.num:'', proc.responsavel?'Resp: '+proc.responsavel:''].filter(Boolean).join(' · ');
+  const ok = document.getElementById('smf-save-ok');
+  if(ok){ ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000); }
+}
+
+function deletarSM() {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  if(!confirm('⚠️ Excluir processo de "'+proc.clienteNome+'"?\nEsta ação não pode ser desfeita!')) return;
+  S.processos_sm = S.processos_sm.filter(x=>x.id!==smFichaId);
+  addAtiv('🗑 Processo SM removido: '+proc.clienteNome);
+  save();
+  closeM('m-sm-ficha');
+  renderSM();
+}
+
+function smfAddAcomp() {
+  const texto = document.getElementById('smf-acomp-texto').value.trim(); if(!texto) return;
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  if(!proc.acompanhamentos) proc.acompanhamentos = [];
+  const now = new Date();
+  proc.acompanhamentos.unshift({
+    id: genId(), tipo: document.getElementById('smf-tipo-acomp').value, texto,
+    autor: eu(), dia_semana: now.toLocaleDateString('pt-BR',{weekday:'long'}),
+    data_registro: now.toLocaleDateString('pt-BR'), hora: now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+  });
+  save(); document.getElementById('smf-acomp-texto').value='';
+  addAtiv('🔍 Acomp SM: '+proc.clienteNome+' — '+texto.slice(0,40));
+  smfRenderAcomp();
+}
+
+const SM_ACOMP_ICONS = {
+  'Requerimento feito':'📋','Documento enviado':'📨','Protocolo INSS':'🏛️','Análise INSS':'🔍','Decisão administrativa':'⚖️',
+  'Recurso interposto':'📝','Audiência':'🎤','Sentença':'📜','Guia de pagamento gerada':'💳','Pagamento recebido':'💰',
+  'Atualização processual':'🔄','Ligação com cliente':'📞','Mensagem enviada':'💬','Outro':'📌'
+};
+
+function smfRenderAcomp() {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  const list = proc.acompanhamentos||[];
+  document.getElementById('smf-acomp-lista').innerHTML = list.length ? list.map(a=>
+    `<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">${SM_ACOMP_ICONS[a.tipo]||'📌'}</span>
+          <span class="tag tag-blue" style="font-size:11px;">${a.tipo||''}</span>
+          <span style="font-size:11px;color:var(--gold);font-weight:600;">${a.autor||''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:11px;color:var(--muted);">📅 ${a.dia_semana||''}, ${a.data_registro||''} às ${a.hora||''}</span>
+          ${isAdmin()?`<button onclick="smfDelAcomp(${a.id})" style="background:rgba(201,76,76,.2);border:1px solid rgba(201,76,76,.4);color:#C94C4C;cursor:pointer;font-size:12px;border-radius:6px;padding:3px 8px;font-family:'DM Sans',sans-serif;">🗑</button>`:''}
+        </div>
+      </div>
+      <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${a.texto}</div>
+    </div>`
+  ).join('') : '<div class="empty-state"><span class="icon">📭</span>Nenhum andamento registrado.</div>';
+}
+
+function smfDelAcomp(id) {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  proc.acompanhamentos = proc.acompanhamentos.filter(a=>a.id!==id);
+  save(); smfRenderAcomp();
+}
+
+function smfAddComent() {
+  const txt = document.getElementById('smf-coment-input').value.trim(); if(!txt) return;
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  if(!proc.comentarios) proc.comentarios = [];
+  const now = new Date();
+  proc.comentarios.push({
+    id: genId(), texto: txt, autor: eu(),
+    data_registro: now.toLocaleDateString('pt-BR'),
+    hora: now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})
+  });
+  save(); document.getElementById('smf-coment-input').value='';
+  smfRenderComent();
+}
+
+function smfRenderComent() {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  const list = proc.comentarios||[];
+  document.getElementById('smf-coment-lista').innerHTML = list.length ? list.map(c=>
+    `<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:11px;font-weight:600;color:var(--gold);">${c.autor}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:10px;color:var(--muted);">${c.data_registro} às ${c.hora}</span>
+          ${isAdmin()?`<button onclick="smfDelComent(${c.id})" style="background:rgba(201,76,76,.2);border:1px solid rgba(201,76,76,.4);color:#C94C4C;cursor:pointer;font-size:11px;border-radius:6px;padding:2px 7px;font-family:'DM Sans',sans-serif;">🗑</button>`:''}
+        </div>
+      </div>
+      <div style="font-size:13px;line-height:1.6;">${c.texto}</div>
+    </div>`
+  ).join('') : '<div style="font-size:12px;color:var(--muted);font-style:italic;padding:12px 0;">Nenhum comentário ainda.</div>';
+}
+
+function smfDelComent(id) {
+  const proc = S.processos_sm.find(x=>x.id===smFichaId); if(!proc) return;
+  proc.comentarios = proc.comentarios.filter(c=>c.id!==id);
+  save(); smfRenderComent();
+}
 
 // ═══════════ CLIENTES ═══════════
 let fichaId=null;
@@ -1478,35 +1734,18 @@ function renderClientes(){
   tbody.querySelectorAll('td[data-i]').forEach(td=>{td.onclick=function(){abrirFicha(list[parseInt(this.dataset.i)].id);};});
 }
 
-function confirmarDelCliente(id, event) {
-  event.stopPropagation();
-  const cli = S.clientes.find(x=>x.id===id);
-  if(!cli) return;
-  if(!confirm('⚠️ Apagar cliente "'+cli.nome+'" e TODOS os seus registros?\n\nEsta ação não pode ser desfeita!')) return;
-  deletarCliente(id);
-}
-
-function deletarCliente(id) {
-  const cli = S.clientes.find(x=>x.id===id);
-  if(!cli) return;
-  S.clientes = S.clientes.filter(x=>x.id!==id);
-  S.atendimentos = S.atendimentos.filter(a=>String(a.clienteId)!==String(id));
-  S.vendas = S.vendas.filter(v=>String(v.clienteId)!==String(id));
-  addAtiv('🗑 Cliente removido: '+cli.nome);
-  save();
-  renderClientes();
-  renderDash();
-}
+function confirmarDelCliente(id, event) { event.stopPropagation(); const cli=S.clientes.find(x=>x.id===id); if(!cli)return; if(!confirm('⚠️ Apagar cliente "'+cli.nome+'" e TODOS os seus registros?\nEsta ação não pode ser desfeita!'))return; deletarCliente(id); }
+function deletarCliente(id) { const cli=S.clientes.find(x=>x.id===id); if(!cli)return; S.clientes=S.clientes.filter(x=>x.id!==id); S.atendimentos=S.atendimentos.filter(a=>String(a.clienteId)!==String(id)); S.vendas=S.vendas.filter(v=>String(v.clienteId)!==String(id)); S.processos_sm=S.processos_sm.filter(p=>String(p.clienteId)!==String(id)); addAtiv('🗑 Cliente removido: '+cli.nome); save(); renderClientes(); renderDash(); }
 
 function salvarCliente(){
-  const nome=document.getElementById('c-nome').value.trim();if(!nome)return;
+  const nome=document.getElementById('c-nome').value.trim(); if(!nome)return;
   S.clientes.push({id:genId(),nome,cpf:document.getElementById('c-cpf').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,area:document.getElementById('c-area').value,status:document.getElementById('c-status').value,obs:document.getElementById('c-obs').value,fechadoPor:document.getElementById('c-fechadopor')?.value||eu(),acompanhamentos:[],contratos:[],criadoEm:new Date().toISOString(),criadoPor:eu()});
-  addAtiv('👤 Novo cliente: '+nome);save();closeM('m-cliente');renderClientes();
+  addAtiv('👤 Novo cliente: '+nome); save(); closeM('m-cliente'); renderClientes();
   ['c-nome','c-cpf','c-tel','c-email','c-obs'].forEach(id=>document.getElementById(id).value='');
 }
 
 function abrirFicha(id){
-  const c=S.clientes.find(x=>String(x.id)===String(id));if(!c)return;
+  const c=S.clientes.find(x=>String(x.id)===String(id)); if(!c)return;
   fichaId=c.id;
   if(!c.acompanhamentos)c.acompanhamentos=[];
   if(!c.contratos)c.contratos=[];
@@ -1521,527 +1760,99 @@ function abrirFicha(id){
     `<div class="form-group"><label>Status</label><select id="fe-status"><option value="ativo"${c.status==='ativo'?' selected':''}>Ativo</option><option value="prospecto"${c.status==='prospecto'?' selected':''}>Prospecto</option><option value="inativo"${c.status==='inativo'?' selected':''}>Inativo</option></select></div>`+
     `<div class="form-group"><label>Fechado por</label><select id="fe-fechadopor">${S.colaboradores.filter(x=>x.perfil!=='cliente').map(x=>`<option value="${x.nome}"${(c.fechadoPor||c.criadoPor)===x.nome?' selected':''}>${x.nome}</option>`).join('')}</select></div>`+
     `<div class="form-group full"><label>Observações</label><textarea id="fe-obs">${c.obs||''}</textarea></div>`;
-  mfTab('dados');
-  openM('m-ficha');
+  mfTab('dados'); openM('m-ficha');
 }
 
-function mfTab(tab){
-  ['dados','acomp','fin'].forEach(t=>{
-    document.getElementById('mfpanel-'+t).style.display=t===tab?'block':'none';
-    document.getElementById('mftab-'+t).classList.toggle('active',t===tab);
-  });
-  if(tab==='acomp')mfRenderAcomp();
-  if(tab==='fin')mfRenderFin();
-}
+function mfTab(tab){ ['dados','acomp','fin'].forEach(t=>{document.getElementById('mfpanel-'+t).style.display=t===tab?'block':'none';document.getElementById('mftab-'+t).classList.toggle('active',t===tab);}); if(tab==='acomp')mfRenderAcomp(); if(tab==='fin')mfRenderFin(); }
 
-function salvarFicha(){
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  c.nome=document.getElementById('fe-nome').value.trim()||c.nome;
-  c.cpf=document.getElementById('fe-cpf').value;
-  c.tel=document.getElementById('fe-tel').value;
-  c.email=document.getElementById('fe-email').value;
-  c.area=document.getElementById('fe-area').value;
-  c.status=document.getElementById('fe-status').value;
-  c.obs=document.getElementById('fe-obs').value;
-  const fpEl=document.getElementById('fe-fechadopor');
-  if(fpEl)c.fechadoPor=fpEl.value;
-  save();renderClientes();
-  document.getElementById('mf-nome').textContent=c.nome;
-  document.getElementById('mf-sub').textContent=[c.cpf,c.area,c.status].filter(Boolean).join(' · ');
-  const ok=document.getElementById('mf-save-ok');if(ok){ok.style.display='inline';setTimeout(()=>ok.style.display='none',2000);}
-}
+function salvarFicha(){ const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; c.nome=document.getElementById('fe-nome').value.trim()||c.nome; c.cpf=document.getElementById('fe-cpf').value; c.tel=document.getElementById('fe-tel').value; c.email=document.getElementById('fe-email').value; c.area=document.getElementById('fe-area').value; c.status=document.getElementById('fe-status').value; c.obs=document.getElementById('fe-obs').value; const fpEl=document.getElementById('fe-fechadopor'); if(fpEl)c.fechadoPor=fpEl.value; save(); renderClientes(); document.getElementById('mf-nome').textContent=c.nome; document.getElementById('mf-sub').textContent=[c.cpf,c.area,c.status].filter(Boolean).join(' · '); const ok=document.getElementById('mf-save-ok'); if(ok){ok.style.display='inline';setTimeout(()=>ok.style.display='none',2000);} }
 
-function mfAddAcomp(){
-  const texto=document.getElementById('mf-acomp-texto').value.trim();if(!texto)return;
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  if(!c.acompanhamentos)c.acompanhamentos=[];
-  const now=new Date();
-  c.acompanhamentos.unshift({id:genId(),tipo:document.getElementById('mf-tipo').value,texto,autor:eu(),dia_semana:now.toLocaleDateString('pt-BR',{weekday:'long'}),data_registro:now.toLocaleDateString('pt-BR'),hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
-  save();document.getElementById('mf-acomp-texto').value='';
-  addAtiv('🔍 Acomp: '+c.nome+' — '+texto.slice(0,40));
-  mfRenderAcomp();
-}
+function mfAddAcomp(){ const texto=document.getElementById('mf-acomp-texto').value.trim(); if(!texto)return; const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; if(!c.acompanhamentos)c.acompanhamentos=[]; const now=new Date(); c.acompanhamentos.unshift({id:genId(),tipo:document.getElementById('mf-tipo').value,texto,autor:eu(),dia_semana:now.toLocaleDateString('pt-BR',{weekday:'long'}),data_registro:now.toLocaleDateString('pt-BR'),hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}); save(); document.getElementById('mf-acomp-texto').value=''; addAtiv('🔍 Acomp: '+c.nome+' — '+texto.slice(0,40)); mfRenderAcomp(); }
 
-function mfRenderAcomp(){
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  const ICONS={'Mensagem enviada':'💬','Ligação realizada':'📞','Reunião':'🤝','Audiência':'⚖️','Protocolo':'📄','Documento enviado':'📨','Atualização processual':'🔄','Outro':'📌'};
-  const list=c.acompanhamentos||[];
-  document.getElementById('mf-acomp-lista').innerHTML=list.length?list.map(a=>
-    `<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">${ICONS[a.tipo]||'📌'}</span><span class="tag tag-blue" style="font-size:11px;">${a.tipo||''}</span><span style="font-size:11px;color:var(--gold);font-weight:600;">${a.autor||''}</span></div>
-        <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:11px;color:var(--muted);">📅 ${a.dia_semana||''}, ${a.data_registro||''} às ${a.hora||''}</span>${isAdmin()?`<button onclick="mfDelAcomp(${a.id})" style="background:rgba(201,76,76,.2);border:1px solid rgba(201,76,76,.4);color:#C94C4C;cursor:pointer;font-size:12px;border-radius:6px;padding:3px 8px;font-family:'DM Sans',sans-serif;">🗑 Remover</button>`:''}</div>
-      </div>
-      <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${a.texto}</div>
-    </div>`).join('')
-    :'<div class="empty-state"><span class="icon">📭</span>Nenhum andamento.</div>';
-}
+function mfRenderAcomp(){ const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; const ICONS={'Mensagem enviada':'💬','Ligação realizada':'📞','Reunião':'🤝','Audiência':'⚖️','Protocolo':'📄','Documento enviado':'📨','Atualização processual':'🔄','Outro':'📌'}; const list=c.acompanhamentos||[]; document.getElementById('mf-acomp-lista').innerHTML=list.length?list.map(a=>`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;"><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:16px;">${ICONS[a.tipo]||'📌'}</span><span class="tag tag-blue" style="font-size:11px;">${a.tipo||''}</span><span style="font-size:11px;color:var(--gold);font-weight:600;">${a.autor||''}</span></div><div style="display:flex;align-items:center;gap:12px;"><span style="font-size:11px;color:var(--muted);">📅 ${a.dia_semana||''}, ${a.data_registro||''} às ${a.hora||''}</span>${isAdmin()?`<button onclick="mfDelAcomp(${a.id})" style="background:rgba(201,76,76,.2);border:1px solid rgba(201,76,76,.4);color:#C94C4C;cursor:pointer;font-size:12px;border-radius:6px;padding:3px 8px;font-family:'DM Sans',sans-serif;">🗑 Remover</button>`:''}</div></div><div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${a.texto}</div></div>`).join(''):'<div class="empty-state"><span class="icon">📭</span>Nenhum andamento.</div>'; }
+function mfDelAcomp(id){ const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; c.acompanhamentos=c.acompanhamentos.filter(a=>a.id!==id); save(); mfRenderAcomp(); }
 
-function mfDelAcomp(id){
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  c.acompanhamentos=c.acompanhamentos.filter(a=>a.id!==id);
-  save();mfRenderAcomp();
-}
-
-function mfAddContrato(){
-  const desc=document.getElementById('mf-ct-desc').value.trim();
-  const total=parseFloat(document.getElementById('mf-ct-total').value);
-  const nP=parseInt(document.getElementById('mf-ct-parc').value);
-  const vP=parseFloat(document.getElementById('mf-ct-vparc').value);
-  const ini=document.getElementById('mf-ct-inicio').value;
-  if(!desc||isNaN(total)||isNaN(nP)||nP<1)return;
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  if(!c.contratos)c.contratos=[];
-  const vParc=isNaN(vP)?parseFloat((total/nP).toFixed(2)):vP;
-  const parcelas=Array.from({length:nP},(_,i)=>{
-    let vencto=null;
-    if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}
-    return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};
-  });
-  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,criadoEm:new Date().toISOString(),criadoPor:eu()});
-  save();
-  ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value='');
-  addAtiv('💰 Contrato: '+c.nome+' — '+desc);
-  mfRenderFin();
-}
+function mfAddContrato(){ const desc=document.getElementById('mf-ct-desc').value.trim(); const total=parseFloat(document.getElementById('mf-ct-total').value); const nP=parseInt(document.getElementById('mf-ct-parc').value); const vP=parseFloat(document.getElementById('mf-ct-vparc').value); const ini=document.getElementById('mf-ct-inicio').value; if(!desc||isNaN(total)||isNaN(nP)||nP<1)return; const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; if(!c.contratos)c.contratos=[]; const vParc=isNaN(vP)?parseFloat((total/nP).toFixed(2)):vP; const parcelas=Array.from({length:nP},(_,i)=>{let vencto=null;if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};});
+  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,criadoEm:new Date().toISOString(),criadoPor:eu()}); save(); ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value=''); addAtiv('💰 Contrato: '+c.nome+' — '+desc); mfRenderFin(); }
 
 let _pagPendente = null;
+function mfMarcarParcela(ctId, pNum, pago) { const c=S.clientes.find(x=>x.id==fichaId); const ct=(c.contratos||[]).find(x=>x.id===ctId); if(!ct)return; const p=ct.parcelas.find(x=>(x.num===pNum||x.numero===pNum)); if(!p)return; if(!pago){p.pago=false;p.dataPag='';p.data_pagamento='';save();mfRenderFin();renderDash();return;} _pagPendente={ctId,pNum}; const venctoISO=p.vencimento||p.vencto||''; const venctoFmt=venctoISO?new Date(venctoISO+'T12:00:00').toLocaleDateString('pt-BR'):'—'; document.getElementById('mdp-info').innerHTML=`<strong style="color:var(--gold);">Parcela ${pNum}</strong> — R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}<br>Contrato: <strong>${ct.desc||ct.descricao}</strong><br>Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`; document.getElementById('mdp-data').value=venctoISO||new Date().toISOString().slice(0,10); openM('m-data-pagamento'); }
 
-function mfMarcarParcela(ctId, pNum, pago) {
-  const c = S.clientes.find(x => x.id == fichaId);
-  const ct = (c.contratos || []).find(x => x.id === ctId);
-  if (!ct) return;
-  const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
-  if (!p) return;
+function confirmarPagamento() { if(!_pagPendente)return; const dataISO=document.getElementById('mdp-data').value; if(!dataISO){alert('⚠️ Informe a data do pagamento.');return;} const{ctId,pNum}=_pagPendente; const c=S.clientes.find(x=>x.id==fichaId); const ct=(c.contratos||[]).find(x=>x.id===ctId); if(!ct)return; const p=ct.parcelas.find(x=>(x.num===pNum||x.numero===pNum)); if(!p)return; const[ano,mes2,dia]=dataISO.split('-'); p.pago=true; p.dataPag=dia+'/'+mes2+'/'+ano; p.data_pagamento=p.dataPag; _pagPendente=null; save(); closeM('m-data-pagamento'); mfRenderFin(); renderDash(); }
 
-  if (!pago) {
-    p.pago = false;
-    p.dataPag = '';
-    p.data_pagamento = '';
-    save();
-    mfRenderFin();
-    renderDash();
-    return;
-  }
-
-  _pagPendente = { ctId, pNum };
-  const venctoISO = p.vencimento || p.vencto || '';
-  const venctoFmt = venctoISO ? new Date(venctoISO + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
-  document.getElementById('mdp-info').innerHTML =
-    `<strong style="color:var(--gold);">Parcela ${pNum}</strong> — R$ ${parseFloat(p.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>` +
-    `Contrato: <strong>${ct.desc || ct.descricao}</strong><br>` +
-    `Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`;
-  const hoje = new Date().toISOString().slice(0, 10);
-  document.getElementById('mdp-data').value = venctoISO || hoje;
-  openM('m-data-pagamento');
-}
-
-function confirmarPagamento() {
-  if (!_pagPendente) return;
-  const dataISO = document.getElementById('mdp-data').value;
-  if (!dataISO) { alert('⚠️ Informe a data do pagamento.'); return; }
-  const { ctId, pNum } = _pagPendente;
-  const c = S.clientes.find(x => x.id == fichaId);
-  const ct = (c.contratos || []).find(x => x.id === ctId);
-  if (!ct) return;
-  const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
-  if (!p) return;
-  const [ano, mes2, dia] = dataISO.split('-');
-  p.pago = true;
-  p.dataPag = dia + '/' + mes2 + '/' + ano;
-  p.data_pagamento = p.dataPag;
-  _pagPendente = null;
-  save();
-  closeM('m-data-pagamento');
-  mfRenderFin();
-  renderDash();
-}
-
-function mfRenderFin(){
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  const cts=c.contratos||[];
-  const rec=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0);
-  const pen=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>!p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0);
-  document.getElementById('mf-novo-contrato-wrap').style.display='block';
-  document.getElementById('mf-fin-resumo').innerHTML=cts.length?`<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;"><div class="stat-card" style="padding:14px;"><div class="stat-label">Contratos</div><div class="stat-val" style="font-size:26px;">${cts.length}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Recebido</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Pendente</div><div class="stat-val" style="font-size:20px;color:var(--gold);">R$ ${pen.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>`:'';
-  const hoje=new Date().toISOString().slice(0,10);
-  document.getElementById('mf-ct-lista').innerHTML=cts.length?cts.map(ct=>{
-    const r=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
-    const tot=parseFloat(ct.total||ct.valor_total||0);
-    const pct=tot>0?Math.round((r/tot)*100):0;
-    return`<div class="card"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${ct.parcelas.map(p=>{const venc=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)<hoje;const vhj=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)===hoje;const vd=p.vencimento||p.vencto;const pn=p.num||p.numero;return`<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;font-size:13px;">Parcela ${pn}</td><td style="padding:8px;font-size:13px;font-weight:600;color:var(--gold);">R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td style="padding:8px;font-size:12px;color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'};">${vd?new Date(vd+'T12:00:00').toLocaleDateString('pt-BR'):'—'}${venc?' ⚠️':vhj?' (hoje)':''}</td><td style="padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;">${p.dataPag||p.data_pagamento||'—'}${p.pago?` <button onclick="editarDataPag(${ct.id},${pn})" title="Corrigir data" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gold);padding:0 2px;">✏️</button>`:''}</td><td style="padding:8px;"><span class="tag ${p.pago?'tag-green':'tag-muted'}">${p.pago?'✅ Pago':'Pendente'}</span></td><td style="padding:8px;"><button class="btn btn-sm ${p.pago?'btn-ghost':'btn-gold'}" onclick="mfMarcarParcela(${ct.id},${pn},${!p.pago})">${p.pago?'Desfazer':'Marcar pago'}</button></td></tr>`;}).join('')}</tbody></table></div></div>`;
-  }).join(''):'<div class="empty-state"><span class="icon">💰</span>Nenhum contrato.</div>';
-}
+function mfRenderFin(){ const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; const cts=c.contratos||[]; const rec=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0); const pen=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>!p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0); document.getElementById('mf-novo-contrato-wrap').style.display='block'; document.getElementById('mf-fin-resumo').innerHTML=cts.length?`<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;"><div class="stat-card" style="padding:14px;"><div class="stat-label">Contratos</div><div class="stat-val" style="font-size:26px;">${cts.length}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Recebido</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Pendente</div><div class="stat-val" style="font-size:20px;color:var(--gold);">R$ ${pen.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>`:''; const hoje=new Date().toISOString().slice(0,10); document.getElementById('mf-ct-lista').innerHTML=cts.length?cts.map(ct=>{const r=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+(parseFloat(p.valor)||0),0);const tot=parseFloat(ct.total||ct.valor_total||0);const pct=tot>0?Math.round((r/tot)*100):0;return`<div class="card"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${ct.parcelas.map(p=>{const venc=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)<hoje;const vhj=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)===hoje;const vd=p.vencimento||p.vencto;const pn=p.num||p.numero;return`<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;font-size:13px;">Parcela ${pn}</td><td style="padding:8px;font-size:13px;font-weight:600;color:var(--gold);">R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td style="padding:8px;font-size:12px;color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'};">${vd?new Date(vd+'T12:00:00').toLocaleDateString('pt-BR'):'—'}${venc?' ⚠️':vhj?' (hoje)':''}</td><td style="padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;">${p.dataPag||p.data_pagamento||'—'}${p.pago?` <button onclick="editarDataPag(${ct.id},${pn})" title="Corrigir data" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gold);padding:0 2px;">✏️</button>`:''}</td><td style="padding:8px;"><span class="tag ${p.pago?'tag-green':'tag-muted'}">${p.pago?'✅ Pago':'Pendente'}</span></td><td style="padding:8px;"><button class="btn btn-sm ${p.pago?'btn-ghost':'btn-gold'}" onclick="mfMarcarParcela(${ct.id},${pn},${!p.pago})">${p.pago?'Desfazer':'Marcar pago'}</button></td></tr>`;}).join('')}</tbody></table></div></div>`;}).join(''):'<div class="empty-state"><span class="icon">💰</span>Nenhum contrato.</div>'; }
 
 let _editDataPag = null;
-
-function editarDataPag(ctId, pNum) {
-  const c = S.clientes.find(x => x.id == fichaId);
-  const ct = (c.contratos||[]).find(x => x.id === ctId);
-  if (!ct) return;
-  const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
-  if (!p || !p.pago) return;
-  _editDataPag = { ctId, pNum };
-  document.getElementById('medp-info').innerHTML =
-    `<strong style="color:var(--gold);">Parcela ${pNum}</strong> — R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}<br>` +
-    `Contrato: <strong>${ct.desc||ct.descricao}</strong><br>` +
-    `Data atual registrada: <span style="color:var(--red);font-weight:600;">${p.dataPag||p.data_pagamento||'não informada'}</span>`;
-  const dp = p.dataPag || p.data_pagamento || '';
-  if (dp) {
-    const pts = dp.split('/');
-    if (pts.length === 3) { document.getElementById('medp-data').value = pts[2] + '-' + pts[1] + '-' + pts[0]; }
-  } else { document.getElementById('medp-data').value = new Date().toISOString().slice(0,10); }
-  openM('m-editar-datapag');
-}
-
-function salvarEdicaoDataPag() {
-  if (!_editDataPag) return;
-  const dataISO = document.getElementById('medp-data').value;
-  if (!dataISO) { alert('⚠️ Informe a data correta.'); return; }
-  const { ctId, pNum } = _editDataPag;
-  const c = S.clientes.find(x => x.id == fichaId);
-  const ct = (c.contratos||[]).find(x => x.id === ctId);
-  if (!ct) return;
-  const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
-  if (!p) return;
-  const [ano, mes2, dia] = dataISO.split('-');
-  p.dataPag = dia + '/' + mes2 + '/' + ano;
-  p.data_pagamento = p.dataPag;
-  _editDataPag = null;
-  save();
-  closeM('m-editar-datapag');
-  mfRenderFin();
-  renderDash();
-}
-
-function mfDelContrato(id){
-  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
-  c.contratos=c.contratos.filter(x=>x.id!==id);
-  save();mfRenderFin();
-}
+function editarDataPag(ctId, pNum) { const c=S.clientes.find(x=>x.id==fichaId); const ct=(c.contratos||[]).find(x=>x.id===ctId); if(!ct)return; const p=ct.parcelas.find(x=>(x.num===pNum||x.numero===pNum)); if(!p||!p.pago)return; _editDataPag={ctId,pNum}; document.getElementById('medp-info').innerHTML=`<strong style="color:var(--gold);">Parcela ${pNum}</strong> — R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}<br>Contrato: <strong>${ct.desc||ct.descricao}</strong><br>Data atual registrada: <span style="color:var(--red);font-weight:600;">${p.dataPag||p.data_pagamento||'não informada'}</span>`; const dp=p.dataPag||p.data_pagamento||''; if(dp){const pts=dp.split('/');if(pts.length===3){document.getElementById('medp-data').value=pts[2]+'-'+pts[1]+'-'+pts[0];}}else{document.getElementById('medp-data').value=new Date().toISOString().slice(0,10);} openM('m-editar-datapag'); }
+function salvarEdicaoDataPag() { if(!_editDataPag)return; const dataISO=document.getElementById('medp-data').value; if(!dataISO){alert('⚠️ Informe a data correta.');return;} const{ctId,pNum}=_editDataPag; const c=S.clientes.find(x=>x.id==fichaId); const ct=(c.contratos||[]).find(x=>x.id===ctId); if(!ct)return; const p=ct.parcelas.find(x=>(x.num===pNum||x.numero===pNum)); if(!p)return; const[ano,mes2,dia]=dataISO.split('-'); p.dataPag=dia+'/'+mes2+'/'+ano; p.data_pagamento=p.dataPag; _editDataPag=null; save(); closeM('m-editar-datapag'); mfRenderFin(); renderDash(); }
+function mfDelContrato(id){ const c=S.clientes.find(x=>x.id==fichaId); if(!c)return; c.contratos=c.contratos.filter(x=>x.id!==id); save(); mfRenderFin(); }
 
 // ═══════════ PANORAMA ═══════════
-function initPanorama(){
-  const el=document.getElementById('pan-mes');
-  if(el&&!el.value) el.value=new Date().toISOString().slice(0,7);
-  renderPanorama();
-}
-
+function initPanorama(){ const el=document.getElementById('pan-mes'); if(el&&!el.value) el.value=new Date().toISOString().slice(0,7); renderPanorama(); }
 function renderPanorama(){
   const mes=document.getElementById('pan-mes')?.value||new Date().toISOString().slice(0,7);
   const mesLabel=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
   document.getElementById('pan-title').textContent='Panorama — '+mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1);
-  const novCli=S.clientes.filter(x=>(x.criadoEm||'').startsWith(mes)).length;
-  const atendMes=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes)).length;
-  const vendasMes=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&v.status==='fechado');
-  const recVendas=vendasMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
-  let recParcelas=0;
-  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{
-    if(p.pago){const dp=p.dataPag||p.data_pagamento||'';if(dp){const pts=dp.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)recParcelas+=parseFloat(p.valor)||0;}}
-  });});});
-  const recTotal=recVendas+recParcelas;
-  const tarPen=S.tarefas.filter(t=>t.status!=='concluido').length;
-  const tarCon=S.tarefas.filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)).length;
-  document.getElementById('pan-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Novos Clientes</div><div class="stat-val">${novCli}</div><div class="stat-icon">👤</div></div>
-    <div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${atendMes}</div><div class="stat-icon">📋</div></div>
-    <div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div><div class="stat-change">de R$ ${recVendas.toLocaleString('pt-BR',{minimumFractionDigits:2})} contratado</div></div>
-    <div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${vendasMes.length}</div><div class="stat-icon">📄</div></div>
-    <div class="stat-card"><div class="stat-label">Tarefas Pendentes</div><div class="stat-val">${tarPen}</div><div class="stat-icon">⏳</div></div>
-    <div class="stat-card"><div class="stat-label">Tarefas Concluídas</div><div class="stat-val" style="color:var(--green);">${tarCon}</div><div class="stat-icon">✅</div></div>
-  `;
+  const novCli=S.clientes.filter(x=>(x.criadoEm||'').startsWith(mes)).length; const atendMes=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes)).length; const vendasMes=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&v.status==='fechado'); const recVendas=vendasMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0); let recParcelas=0; S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp=p.dataPag||p.data_pagamento||'';if(dp){const pts=dp.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)recParcelas+=parseFloat(p.valor)||0;}}});});}); const recTotal=recVendas+recParcelas;
+  const tarPen=S.tarefas.filter(t=>t.status!=='concluido').length; const tarCon=S.tarefas.filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)).length;
+  document.getElementById('pan-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Novos Clientes</div><div class="stat-val">${novCli}</div><div class="stat-icon">👤</div></div><div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${atendMes}</div><div class="stat-icon">📋</div></div><div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div><div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${vendasMes.length}</div><div class="stat-icon">📄</div></div><div class="stat-card"><div class="stat-label">Tarefas Pendentes</div><div class="stat-val">${tarPen}</div><div class="stat-icon">⏳</div></div><div class="stat-card"><div class="stat-label">Tarefas Concluídas</div><div class="stat-val" style="color:var(--green);">${tarCon}</div><div class="stat-icon">✅</div></div>`;
   const colabs=S.colaboradores.filter(c=>c.perfil!=='cliente');
   function acor(nome){const cs=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C'];let h=0;for(const ch of(nome||''))h=(h*31+ch.charCodeAt(0))%cs.length;return cs[h];}
   function ini(nome){if(!nome)return'?';const p=nome.replace('Dra. ','').replace('Dr. ','').split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
   document.getElementById('pan-colabs').innerHTML=colabs.map(colab=>{
-    const nome=colab.nome;
-    const cliMes=S.clientes.filter(x=>(x.criadoEm||'').startsWith(mes)&&x.criadoPor===nome).length;
-    const atMes=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes)&&(a.responsavel===nome||a.criadoPor===nome)).length;
-    const vMes=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&(v.criadoPor===nome||v.responsavel===nome)&&v.status==='fechado');
-    const recMes=vMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
-    const tPen=S.tarefas.filter(t=>t.status!=='concluido'&&(t.responsavel===nome||t.criadoPor===nome)).length;
-    const tCon=S.tarefas.filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)&&(t.responsavel===nome||t.criadoPor===nome)).length;
-    const cor=acor(nome);
-    return`<div class="card" style="margin-bottom:16px;">
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:40px;height:40px;border-radius:50%;background:${cor};display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:#000;flex-shrink:0;">${ini(nome)}</div>
-          <div><div class="card-title" style="font-size:16px;">${nome}</div><div style="font-size:11px;color:var(--muted);">${colab.cargo||''} · <span class="tag ${colab.perfil==='administrador'?'tag-gold':'tag-blue'}" style="font-size:10px;padding:1px 8px;">${colab.perfil==='administrador'?'👑 Admin':'👤 Colaborador'}</span></div></div>
-        </div>
-      </div>
-      <div style="padding:16px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Clientes</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${cliMes}</div></div>
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Atendimentos</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${atMes}</div></div>
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Receita</div><div style="font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Contratos</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${vMes.length}</div></div>
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">T. Pendentes</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;color:var(--gold);">${tPen}</div></div>
-        <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">T. Concluídas</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;color:var(--green);">${tCon}</div></div>
-      </div>
-    </div>`;
+    const nome=colab.nome; const cliMes=S.clientes.filter(x=>(x.criadoEm||'').startsWith(mes)&&x.criadoPor===nome).length; const atMes=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes)&&(a.responsavel===nome||a.criadoPor===nome)).length; const vMes=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&(v.criadoPor===nome||v.responsavel===nome)&&v.status==='fechado'); const recMes=vMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0); const tPen=S.tarefas.filter(t=>t.status!=='concluido'&&(t.responsavel===nome||t.criadoPor===nome)).length; const tCon=S.tarefas.filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)&&(t.responsavel===nome||t.criadoPor===nome)).length; const cor=acor(nome);
+    return`<div class="card" style="margin-bottom:16px;"><div class="card-header"><div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:${cor};display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:#000;flex-shrink:0;">${ini(nome)}</div><div><div class="card-title" style="font-size:16px;">${nome}</div><div style="font-size:11px;color:var(--muted);">${colab.cargo||''} · <span class="tag ${colab.perfil==='administrador'?'tag-gold':'tag-blue'}" style="font-size:10px;padding:1px 8px;">${colab.perfil==='administrador'?'👑 Admin':'👤 Colaborador'}</span></div></div></div></div><div style="padding:16px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Clientes</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${cliMes}</div></div><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Atendimentos</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${atMes}</div></div><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Receita</div><div style="font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">Contratos</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;">${vMes.length}</div></div><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">T. Pendentes</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;color:var(--gold);">${tPen}</div></div><div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px;">T. Concluídas</div><div style="font-family:'DM Sans',sans-serif;font-size:28px;font-weight:700;color:var(--green);">${tCon}</div></div></div></div>`;
   }).join('');
 }
 
 // ═══════════ NEGOCIAÇÃO ═══════════
-const NEG_COLS = [
-  {k:'requer',l:'Requer Negociação',c:'#C9A84C',icon:'📋'},
-  {k:'tentativa',l:'Em Tentativa',c:'#4C7EC9',icon:'🔄'},
-  {k:'aprovada',l:'Negociação Aprovada',c:'#4CAF7D',icon:'✅'},
-  {k:'falha',l:'Falha na Negociação',c:'#C94C4C',icon:'❌'},
-];
-
+const NEG_COLS = [{k:'requer',l:'Requer Negociação',c:'#C9A84C',icon:'📋'},{k:'tentativa',l:'Em Tentativa',c:'#4C7EC9',icon:'🔄'},{k:'aprovada',l:'Negociação Aprovada',c:'#4CAF7D',icon:'✅'},{k:'falha',l:'Falha na Negociação',c:'#C94C4C',icon:'❌'}];
 function openAddNeg(){ fillClientes('neg-cli'); fillColabs('neg-resp',eu()); document.getElementById('neg-desc').value=''; openM('m-neg-add'); }
-function salvarNeg(){
-  const cliId=document.getElementById('neg-cli').value, desc=document.getElementById('neg-desc').value.trim();
-  if(!cliId||!desc)return;
-  const cli=S.clientes.find(x=>String(x.id)===String(cliId));if(!cli)return;
-  if(!S.negociacoes)S.negociacoes=[];
-  S.negociacoes.unshift({id:genId(),clienteId:cliId,clienteNome:cli.nome,desc,responsavel:document.getElementById('neg-resp').value,status:'requer',criadoEm:new Date().toISOString(),criadoPor:eu()});
-  addAtiv('🤝 Negociação: '+cli.nome);
-  save(); closeM('m-neg-add'); renderNegociacao();
-}
+function salvarNeg(){ const cliId=document.getElementById('neg-cli').value, desc=document.getElementById('neg-desc').value.trim(); if(!cliId||!desc)return; const cli=S.clientes.find(x=>String(x.id)===String(cliId)); if(!cli)return; if(!S.negociacoes)S.negociacoes=[]; S.negociacoes.unshift({id:genId(),clienteId:cliId,clienteNome:cli.nome,desc,responsavel:document.getElementById('neg-resp').value,status:'requer',criadoEm:new Date().toISOString(),criadoPor:eu()}); addAtiv('🤝 Negociação: '+cli.nome); save(); closeM('m-neg-add'); renderNegociacao(); }
 function moverNeg(id,status){ const n=S.negociacoes.find(x=>x.id===id); if(n){n.status=status;save();renderNegociacao();} }
 function delNeg(id){ if(!confirm('Remover esta negociação?'))return; S.negociacoes=S.negociacoes.filter(x=>x.id!==id); save();renderNegociacao(); }
-
-function renderNegociacao(){
-  if(!S.negociacoes)S.negociacoes=[];
-  const busca=(document.getElementById('neg-busca')?.value||'').toLowerCase();
-  const baseNeg=isAdmin()?S.negociacoes:S.negociacoes.filter(n=>n.criadoPor===eu()||n.responsavel===eu());
-  document.getElementById('neg-board').innerHTML=NEG_COLS.map(col=>{
-    let items=baseNeg.filter(n=>n.status===col.k);
-    if(busca)items=items.filter(n=>n.clienteNome.toLowerCase().includes(busca)||n.desc.toLowerCase().includes(busca));
-    return`<div style="background:var(--dark-3);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
-      <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:${col.c};">${col.icon} ${col.l}</span>
-        <span style="background:${col.c};color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${items.length}</span>
-      </div>
-      <div style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:180px;flex:1;">
-        ${items.map(n=>`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:12px;">
-          <div style="font-weight:600;font-size:13px;color:var(--gold);cursor:pointer;text-decoration:underline;margin-bottom:4px;" onclick="abrirFicha(${n.clienteId})">${n.clienteNome}</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">${n.desc}</div>
-          ${n.responsavel?`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">👤 ${n.responsavel}</div>`:''}
-          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
-            ${NEG_COLS.filter(c2=>c2.k!==col.k).map(c2=>`<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border-color:${c2.c};color:${c2.c};" onclick="moverNeg(${n.id},'${c2.k}')">${c2.icon}</button>`).join('')}
-          </div>
-          <div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="abrirFicha(${n.clienteId})">👁 Ver Ficha</button><button class="btn btn-danger btn-sm" onclick="delNeg(${n.id})">🗑</button></div>
-        </div>`).join('')||`<div class="empty-state" style="padding:20px;font-size:12px;">Nenhum cliente</div>`}
-        <button class="btn btn-outline" style="width:100%;margin-top:4px;font-size:12px;" onclick="openAddNeg()">+ Adicionar</button>
-      </div>
-    </div>`;
-  }).join('');
-}
+function renderNegociacao(){ if(!S.negociacoes)S.negociacoes=[]; const busca=(document.getElementById('neg-busca')?.value||'').toLowerCase(); const baseNeg=isAdmin()?S.negociacoes:S.negociacoes.filter(n=>n.criadoPor===eu()||n.responsavel===eu()); document.getElementById('neg-board').innerHTML=NEG_COLS.map(col=>{let items=baseNeg.filter(n=>n.status===col.k); if(busca)items=items.filter(n=>n.clienteNome.toLowerCase().includes(busca)||n.desc.toLowerCase().includes(busca)); return`<div style="background:var(--dark-3);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;"><div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:${col.c};">${col.icon} ${col.l}</span><span style="background:${col.c};color:#000;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">${items.length}</span></div><div style="padding:10px;display:flex;flex-direction:column;gap:8px;min-height:180px;flex:1;">${items.map(n=>`<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:12px;"><div style="font-weight:600;font-size:13px;color:var(--gold);cursor:pointer;text-decoration:underline;margin-bottom:4px;" onclick="abrirFicha(${n.clienteId})">${n.clienteNome}</div><div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">${n.desc}</div>${n.responsavel?`<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">👤 ${n.responsavel}</div>`:''}<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">${NEG_COLS.filter(c2=>c2.k!==col.k).map(c2=>`<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:3px 8px;border-color:${c2.c};color:${c2.c};" onclick="moverNeg(${n.id},'${c2.k}')">${c2.icon}</button>`).join('')}</div><div style="display:flex;gap:4px;"><button class="btn btn-outline btn-sm" style="font-size:11px;" onclick="abrirFicha(${n.clienteId})">👁 Ver Ficha</button><button class="btn btn-danger btn-sm" onclick="delNeg(${n.id})">🗑</button></div></div>`).join('')||`<div class="empty-state" style="padding:20px;font-size:12px;">Nenhum cliente</div>`}<button class="btn btn-outline" style="width:100%;margin-top:4px;font-size:12px;" onclick="openAddNeg()">+ Adicionar</button></div></div>`; }).join(''); }
 
 // ═══════════ FINANCEIRO ═══════════
 const FIN_SENHA = btoa('camila123');
 let finAutenticado = false;
-
-function initFinanceiro() {
-  if(!isAdmin()) { nav('dashboard'); return; }
-  if(!finAutenticado) {
-    document.getElementById('fin-lock').style.display = 'flex';
-    document.getElementById('fin-content').style.display = 'none';
-    document.getElementById('fin-senha-input').value = '';
-    document.getElementById('fin-erro').style.display = 'none';
-  } else { mostrarFinanceiro(); }
-}
-
-function verificarSenhaFin() {
-  const senha = document.getElementById('fin-senha-input').value;
-  const admins = S.colaboradores.filter(c => c.perfil === 'administrador');
-  const ok = admins.some(a => a.senha === btoa(senha));
-  if(ok) { finAutenticado = true; mostrarFinanceiro(); }
-  else { document.getElementById('fin-erro').style.display = 'block'; document.getElementById('fin-senha-input').value = ''; }
-}
-
-function trancaFinanceiro() {
-  finAutenticado = false;
-  document.getElementById('fin-lock').style.display = 'flex';
-  document.getElementById('fin-content').style.display = 'none';
-}
-
-function mostrarFinanceiro() {
-  document.getElementById('fin-lock').style.display = 'none';
-  document.getElementById('fin-content').style.display = 'block';
-  const el = document.getElementById('fin-mes');
-  if(el && !el.value) el.value = new Date().toISOString().slice(0,7);
-  renderFinanceiro();
-}
-
+function initFinanceiro() { if(!isAdmin()){nav('dashboard');return;} if(!finAutenticado){document.getElementById('fin-lock').style.display='flex';document.getElementById('fin-content').style.display='none';document.getElementById('fin-senha-input').value='';document.getElementById('fin-erro').style.display='none';}else{mostrarFinanceiro();} }
+function verificarSenhaFin() { const senha=document.getElementById('fin-senha-input').value; const admins=S.colaboradores.filter(c=>c.perfil==='administrador'); const ok=admins.some(a=>a.senha===btoa(senha)); if(ok){finAutenticado=true;mostrarFinanceiro();}else{document.getElementById('fin-erro').style.display='block';document.getElementById('fin-senha-input').value='';} }
+function trancaFinanceiro() { finAutenticado=false; document.getElementById('fin-lock').style.display='flex'; document.getElementById('fin-content').style.display='none'; }
+function mostrarFinanceiro() { document.getElementById('fin-lock').style.display='none'; document.getElementById('fin-content').style.display='block'; const el=document.getElementById('fin-mes'); if(el&&!el.value)el.value=new Date().toISOString().slice(0,7); renderFinanceiro(); }
 function renderFinanceiro() {
-  const mes = document.getElementById('fin-mes')?.value || new Date().toISOString().slice(0,7);
-  const mesLabel = new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-  document.getElementById('fin-title').textContent = '💳 Financeiro — ' + mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1);
-  const hoje = new Date().toISOString().slice(0,10);
-  const em30 = new Date();em30.setDate(em30.getDate()+30);const em30ISO = em30.toISOString().slice(0,10);
-  let recMes=0, recTotal=0, totalContratado=0, totalPendente=0;
-  const pagamentos=[], atrasos=[], proximas=[];
-  S.clientes.forEach(cli => {
-    (cli.contratos||[]).forEach(ct => {
-      const tot = parseFloat(ct.total||ct.valor_total||0);
-      totalContratado += tot;
-      (ct.parcelas||[]).forEach(p => {
-        const val = parseFloat(p.valor)||0;
-        const vd = p.vencimento||p.vencto||'';
-        const dp = p.dataPag||p.data_pagamento||'';
-        if(p.pago) {
-          recTotal += val;
-          if(dp) {
-            const pts = dp.split('/');
-            if(pts.length===3 && pts[2]+'-'+pts[1]===mes) {
-              recMes += val;
-              pagamentos.push({cliente:cli.nome, contrato:ct.desc||ct.descricao, parcela:p.num||p.numero, valor:val, dataPag:dp});
-            }
-          }
-        } else {
-          totalPendente += val;
-          if(vd && vd < hoje) { const diff=Math.floor((new Date(hoje)-new Date(vd))/86400000); atrasos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd,atraso:diff}); }
-          else if(vd && vd >= hoje && vd <= em30ISO) { proximas.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd}); }
-        }
-      });
-    });
-  });
-  document.getElementById('fin-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Recebido no Mês</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card"><div class="stat-label">Total Recebido</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">📈</div></div>
-    <div class="stat-card"><div class="stat-label">Total Contratado</div><div class="stat-val" style="font-size:22px;">R$ ${totalContratado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">📄</div></div>
-    <div class="stat-card"><div class="stat-label">Pendente a Receber</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${totalPendente.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
-  `;
-  pagamentos.sort((a,b)=>b.dataPag.localeCompare(a.dataPag));
-  document.getElementById('fin-pagamentos').innerHTML=pagamentos.length?pagamentos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="color:var(--green);font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Data Pagamento">${p.dataPag}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-state">Nenhum pagamento neste mês</td></tr>';
-  atrasos.sort((a,b)=>b.atraso-a.atraso);
-  document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600;color:var(--red)">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td></tr>`).join(''):'<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso</td></tr>';
-  proximas.sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
-  document.getElementById('fin-proximas').innerHTML=proximas.length?proximas.map(p=>{const diff=Math.floor((new Date(p.vencimento)-new Date(hoje))/86400000);const cor=diff<=7?'var(--gold)':'var(--muted)';return`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}${diff<=7?' ⚠️':''}</td></tr>`;}).join(''):'<tr><td colspan="5" class="empty-state">Nenhuma parcela nos próximos 30 dias</td></tr>';
+  const mes=document.getElementById('fin-mes')?.value||new Date().toISOString().slice(0,7); const mesLabel=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); document.getElementById('fin-title').textContent='💳 Financeiro — '+mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1); const hoje=new Date().toISOString().slice(0,10); const em30=new Date();em30.setDate(em30.getDate()+30);const em30ISO=em30.toISOString().slice(0,10);
+  let recMes=0,recTotal=0,totalContratado=0,totalPendente=0; const pagamentos=[],atrasos=[],proximas=[];
+  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{const tot=parseFloat(ct.total||ct.valor_total||0);totalContratado+=tot;(ct.parcelas||[]).forEach(p=>{const val=parseFloat(p.valor)||0;const vd=p.vencimento||p.vencto||'';const dp=p.dataPag||p.data_pagamento||'';if(p.pago){recTotal+=val;if(dp){const pts=dp.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes){recMes+=val;pagamentos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,dataPag:dp});}}}else{totalPendente+=val;if(vd&&vd<hoje){const diff=Math.floor((new Date(hoje)-new Date(vd))/86400000);atrasos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd,atraso:diff});}else if(vd&&vd>=hoje&&vd<=em30ISO){proximas.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd});}}});});});
+  document.getElementById('fin-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Recebido no Mês</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div><div class="stat-card"><div class="stat-label">Total Recebido</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">📈</div></div><div class="stat-card"><div class="stat-label">Total Contratado</div><div class="stat-val" style="font-size:22px;">R$ ${totalContratado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">📄</div></div><div class="stat-card"><div class="stat-label">Pendente a Receber</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${totalPendente.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>`;
+  pagamentos.sort((a,b)=>b.dataPag.localeCompare(a.dataPag)); document.getElementById('fin-pagamentos').innerHTML=pagamentos.length?pagamentos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="color:var(--green);font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Data Pagamento">${p.dataPag}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-state">Nenhum pagamento neste mês</td></tr>';
+  atrasos.sort((a,b)=>b.atraso-a.atraso); document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600;color:var(--red)">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td></tr>`).join(''):'<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso</td></tr>';
+  proximas.sort((a,b)=>a.vencimento.localeCompare(b.vencimento)); document.getElementById('fin-proximas').innerHTML=proximas.length?proximas.map(p=>{const diff=Math.floor((new Date(p.vencimento)-new Date(hoje))/86400000);const cor=diff<=7?'var(--gold)':'var(--muted)';return`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}${diff<=7?' ⚠️':''}</td></tr>`;}).join(''):'<tr><td colspan="5" class="empty-state">Nenhuma parcela nos próximos 30 dias</td></tr>';
 }
 
 // ═══════════ COLABORADORES ═══════════
-function toggleVinculo(){
-  const perfil=document.getElementById('col-perfil').value;
-  const wrap=document.getElementById('vinculo-wrap');
-  if(perfil==='cliente'){wrap.style.display='block';const sel=document.getElementById('col-vinculo');sel.innerHTML='<option value="">Selecione...</option>'+S.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');}
-  else{wrap.style.display='none';}
-}
+function toggleVinculo(){ const perfil=document.getElementById('col-perfil').value; const wrap=document.getElementById('vinculo-wrap'); if(perfil==='cliente'){wrap.style.display='block';const sel=document.getElementById('col-vinculo');sel.innerHTML='<option value="">Selecione...</option>'+S.clientes.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');}else{wrap.style.display='none';} }
 function openColab(){['col-nome','col-oab','col-email','col-tel','col-user','col-senha'].forEach(id=>document.getElementById(id).value='');document.getElementById('m-colab').dataset.editId='';document.getElementById('col-perfil').value='colaborador';document.getElementById('vinculo-wrap').style.display='none';openM('m-colab');}
-function salvarColab(){
-  const nome=document.getElementById('col-nome').value.trim();if(!nome)return;
-  const editId=parseInt(document.getElementById('m-colab').dataset.editId||'0');
-  const user=document.getElementById('col-user').value.trim().toLowerCase();
-  const senha=document.getElementById('col-senha').value;
-  const perfil=document.getElementById('col-perfil').value;
-  const vinculo=document.getElementById('col-vinculo').value;
-  if(editId){const c=S.colaboradores.find(x=>x.id===editId);if(c){c.nome=nome;c.cargo=document.getElementById('col-cargo').value;c.oab=document.getElementById('col-oab').value;c.email=document.getElementById('col-email').value;c.tel=document.getElementById('col-tel').value;c.status=document.getElementById('col-status').value;c.usuario=user;if(senha)c.senha=btoa(senha);c.perfil=perfil;c.clienteId=vinculo||null;}}
-  else{if(!user||!senha)return;S.colaboradores.push({id:genId(),nome,cargo:document.getElementById('col-cargo').value,oab:document.getElementById('col-oab').value,email:document.getElementById('col-email').value,tel:document.getElementById('col-tel').value,status:document.getElementById('col-status').value,usuario:user,senha:btoa(senha),perfil,clienteId:vinculo||null});}
-  save();closeM('m-colab');renderColab();
-}
+function salvarColab(){ const nome=document.getElementById('col-nome').value.trim(); if(!nome)return; const editId=parseInt(document.getElementById('m-colab').dataset.editId||'0'); const user=document.getElementById('col-user').value.trim().toLowerCase(); const senha=document.getElementById('col-senha').value; const perfil=document.getElementById('col-perfil').value; const vinculo=document.getElementById('col-vinculo').value; if(editId){const c=S.colaboradores.find(x=>x.id===editId);if(c){c.nome=nome;c.cargo=document.getElementById('col-cargo').value;c.oab=document.getElementById('col-oab').value;c.email=document.getElementById('col-email').value;c.tel=document.getElementById('col-tel').value;c.status=document.getElementById('col-status').value;c.usuario=user;if(senha)c.senha=btoa(senha);c.perfil=perfil;c.clienteId=vinculo||null;}}else{if(!user||!senha)return;S.colaboradores.push({id:genId(),nome,cargo:document.getElementById('col-cargo').value,oab:document.getElementById('col-oab').value,email:document.getElementById('col-email').value,tel:document.getElementById('col-tel').value,status:document.getElementById('col-status').value,usuario:user,senha:btoa(senha),perfil,clienteId:vinculo||null});} save();closeM('m-colab');renderColab(); }
 const PL={administrador:'👑 Administrador',colaborador:'👤 Colaborador',cliente:'🧑‍💼 Cliente'};
 const PT={administrador:'tag-gold',colaborador:'tag-blue',cliente:'tag-green'};
 const ST_C={ativo:'tag-green',ferias:'tag-gold',inativo:'tag-muted'};
-function renderColab(){
-  const list=isAdmin()?S.colaboradores:S.colaboradores.filter(c=>c.id===U?.id);
-  document.getElementById('tbody-colab').innerHTML=list.map(c=>`<tr><td data-label="Nome" style="font-weight:600">${c.nome}</td><td data-label="Cargo">${c.cargo||'-'}</td><td data-label="OAB" style="color:var(--muted)">${c.oab||'-'}</td><td data-label="Usuário" style="color:var(--muted)">${c.usuario?'@'+c.usuario:'<em style="color:var(--red)">sem login</em>'}</td><td data-label="Perfil"><span class="tag ${PT[c.perfil]||'tag-muted'}">${PL[c.perfil]||'-'}</span></td><td data-label="Status"><span class="tag ${ST_C[c.status]||'tag-muted'}">${c.status||'-'}</span></td><td data-label="Ações" style="display:flex;gap:5px;">${isAdmin()&&c.id!==1?`<button class="btn btn-outline btn-sm" onclick="editColab(${c.id})">✏</button><button class="btn btn-danger btn-sm" onclick="delColab(${c.id})">🗑</button>`:c.id===1?'<span class="tag tag-gold">Admin</span>':''}</td></tr>`).join('')||'<tr><td colspan="7" class="empty-state">Nenhum colaborador</td></tr>';
-}
-function editColab(id){
-  const c=S.colaboradores.find(x=>x.id===id);if(!c)return;
-  document.getElementById('col-nome').value=c.nome;document.getElementById('col-cargo').value=c.cargo||'Advogado(a)';document.getElementById('col-oab').value=c.oab||'';document.getElementById('col-email').value=c.email||'';document.getElementById('col-tel').value=c.tel||'';document.getElementById('col-status').value=c.status||'ativo';document.getElementById('col-user').value=c.usuario||'';document.getElementById('col-senha').value='';document.getElementById('col-perfil').value=c.perfil||'colaborador';
-  document.getElementById('m-colab').dataset.editId=id;document.getElementById('m-colab-title').textContent='Editar Colaborador';
-  toggleVinculo();if(c.clienteId)document.getElementById('col-vinculo').value=c.clienteId;
-  openM('m-colab');
-}
+function renderColab(){ const list=isAdmin()?S.colaboradores:S.colaboradores.filter(c=>c.id===U?.id); document.getElementById('tbody-colab').innerHTML=list.map(c=>`<tr><td data-label="Nome" style="font-weight:600">${c.nome}</td><td data-label="Cargo">${c.cargo||'-'}</td><td data-label="OAB" style="color:var(--muted)">${c.oab||'-'}</td><td data-label="Usuário" style="color:var(--muted)">${c.usuario?'@'+c.usuario:'<em style="color:var(--red)">sem login</em>'}</td><td data-label="Perfil"><span class="tag ${PT[c.perfil]||'tag-muted'}">${PL[c.perfil]||'-'}</span></td><td data-label="Status"><span class="tag ${ST_C[c.status]||'tag-muted'}">${c.status||'-'}</span></td><td data-label="Ações" style="display:flex;gap:5px;">${isAdmin()&&c.id!==1?`<button class="btn btn-outline btn-sm" onclick="editColab(${c.id})">✏</button><button class="btn btn-danger btn-sm" onclick="delColab(${c.id})">🗑</button>`:c.id===1?'<span class="tag tag-gold">Admin</span>':''}</td></tr>`).join('')||'<tr><td colspan="7" class="empty-state">Nenhum colaborador</td></tr>'; }
+function editColab(id){ const c=S.colaboradores.find(x=>x.id===id); if(!c)return; document.getElementById('col-nome').value=c.nome;document.getElementById('col-cargo').value=c.cargo||'Advogado(a)';document.getElementById('col-oab').value=c.oab||'';document.getElementById('col-email').value=c.email||'';document.getElementById('col-tel').value=c.tel||'';document.getElementById('col-status').value=c.status||'ativo';document.getElementById('col-user').value=c.usuario||'';document.getElementById('col-senha').value='';document.getElementById('col-perfil').value=c.perfil||'colaborador'; document.getElementById('m-colab').dataset.editId=id;document.getElementById('m-colab-title').textContent='Editar Colaborador'; toggleVinculo();if(c.clienteId)document.getElementById('col-vinculo').value=c.clienteId; openM('m-colab'); }
 function delColab(id){if(id===1)return;S.colaboradores=S.colaboradores.filter(c=>c.id!==id);save();renderColab();}
 
 // ═══════════ RELATÓRIOS ═══════════
-function initRel(){
-  const sel=document.getElementById('rel-colab');const prev=sel.value;
-  sel.innerHTML='<option value="">Todos</option>'+S.colaboradores.map(c=>`<option value="${c.nome}"${c.nome===prev?' selected':''}>${c.nome}</option>`).join('');
-  if(!document.getElementById('rel-dia').value)document.getElementById('rel-dia').value=new Date().toISOString().slice(0,10);
-  if(!document.getElementById('rel-mes').value)document.getElementById('rel-mes').value=new Date().toISOString().slice(0,7);
-  renderRel();
-}
-function toggleRelPeriodo(){
-  const t=document.getElementById('rel-tipo').value;
-  document.getElementById('rel-dia-wrap').style.display=t==='diario'?'flex':'none';
-  document.getElementById('rel-mes-wrap').style.display=t==='mensal'?'flex':'none';
-  renderRel();
-}
+function initRel(){ const sel=document.getElementById('rel-colab'); const prev=sel.value; sel.innerHTML='<option value="">Todos</option>'+S.colaboradores.map(c=>`<option value="${c.nome}"${c.nome===prev?' selected':''}>${c.nome}</option>`).join(''); if(!document.getElementById('rel-dia').value)document.getElementById('rel-dia').value=new Date().toISOString().slice(0,10); if(!document.getElementById('rel-mes').value)document.getElementById('rel-mes').value=new Date().toISOString().slice(0,7); renderRel(); }
+function toggleRelPeriodo(){ const t=document.getElementById('rel-tipo').value; document.getElementById('rel-dia-wrap').style.display=t==='diario'?'flex':'none'; document.getElementById('rel-mes-wrap').style.display=t==='mensal'?'flex':'none'; renderRel(); }
 function renderRel(){ const tipo=document.getElementById('rel-tipo').value; const fc=document.getElementById('rel-colab').value; const colabs=fc?S.colaboradores.filter(c=>c.nome===fc):S.colaboradores; if(tipo==='diario')renderRelDia(colabs);else renderRelMes(colabs); }
 function getPonto(nome,data){return(S.ponto[data]&&S.ponto[data][nome])||{};}
-function metDia(nome,data){
-  const p=getPonto(nome,data);
-  const a=S.atendimentos.filter(x=>(x.data===data||x.data_atend===data)&&x.responsavel===nome).length;
-  const v=S.vendas.filter(x=>(x.data===data||x.data_venda===data)&&(x.criadoPor===nome||x.responsavel===nome)&&x.status==='fechado');
-  const tc=S.tarefas.filter(x=>x.criadoPor===nome&&x.criadoEm&&x.criadoEm.startsWith(data)).length;
-  const tk=S.tarefas.filter(x=>x.status==='concluido'&&x.prazo===data&&x.responsavel===nome).length;
-  const recTotal=v.reduce((s,x)=>s+(parseFloat(x.valor)||0),0);
-  return{entrada:p.entrada||'--',saida:p.saida||'--',horas:calcHoras(p),atend:a,vend:v.length,rec:recTotal,tCri:tc,tCon:tk};
-}
-function renderRelDia(colabs){
-  const data=document.getElementById('rel-dia').value;if(!data)return;
-  const lbl=new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
-  document.getElementById('rel-title').textContent='Relatório Diário — '+lbl;
-  document.getElementById('rel-detalhe').style.display='none';
-  const ta=S.atendimentos.filter(a=>(a.data===data||a.data_atend===data)).length;
-  const tv=S.vendas.filter(v=>(v.data===data||v.data_venda===data)&&v.status==='fechado');
-  const totalCtDia=tv.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
-  let vlrRecDia=0;
-  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3){const iso=pts[2]+'-'+pts[1]+'-'+pts[0];if(iso===data)vlrRecDia+=parseFloat(p.valor)||0;}}}});});});
-  document.getElementById('rel-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${ta}</div><div class="stat-icon">📋</div></div>
-    <div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${tv.length}</div><div class="stat-icon">📄</div><div class="stat-change">R$ ${totalCtDia.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${vlrRecDia.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div>
-    <div class="stat-card"><div class="stat-label">Tarefas</div><div class="stat-val">${S.tarefas.filter(t=>t.criadoEm&&t.criadoEm.startsWith(data)).length}</div><div class="stat-icon">✅</div></div>
-  `;
-  document.getElementById('rel-thead').innerHTML='<th>Colaborador</th><th>Entrada</th><th>Saída</th><th>Horas</th><th>Atendimentos</th><th>Vendas</th><th>Receita</th><th>T.Criadas</th><th>T.Conc.</th>';
-  document.getElementById('tbody-rel').innerHTML=colabs.map(c=>{const m=metDia(c.nome,data);return`<tr><td data-label="Colaborador" style="font-weight:600">${c.nome}</td><td data-label="Entrada">${m.entrada!=='--'?`<span class="tag tag-green">${m.entrada}</span>`:'<span class="tag tag-muted">--</span>'}</td><td data-label="Saída">${m.saida!=='--'?`<span class="tag tag-red">${m.saida}</span>`:'<span class="tag tag-muted">--</span>'}</td><td data-label="Horas"><strong>${m.horas}</strong></td><td data-label="Atend.">${m.atend}</td><td data-label="Vendas">${m.vend}</td><td data-label="Receita" style="color:var(--gold);font-weight:600;">R$ ${m.rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="T.Cri.">${m.tCri}</td><td data-label="T.Con.">${m.tCon}</td></tr>`;}).join('')||'<tr><td colspan="9" class="empty-state">Sem dados</td></tr>';
-}
-function renderRelMes(colabs){
-  const mes=document.getElementById('rel-mes').value;if(!mes)return;
-  const [y,m]=mes.split('-').map(Number);
-  const dias=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){dias.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);}
-  const lbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-  document.getElementById('rel-title').textContent='Relatório Mensal — '+lbl;
-  const dp=Object.keys(S.ponto).filter(d=>d.startsWith(mes)).length;
-  const am=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes));
-  const vm=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&v.status==='fechado');
-  const nTotal=vm.length;
-  const totalContratado=vm.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
-  let vlrRecebido=0;
-  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)vlrRecebido+=parseFloat(p.valor)||0;}}});});});
-  document.getElementById('rel-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">Dias com Ponto</div><div class="stat-val">${dp}</div><div class="stat-icon">🕐</div></div>
-    <div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${am.length}</div><div class="stat-icon">📋</div></div>
-    <div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${nTotal}</div><div class="stat-icon">📄</div><div class="stat-change">R$ ${totalContratado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
-    <div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${vlrRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div><div class="stat-change" style="color:var(--muted);">de R$ ${totalContratado.toLocaleString('pt-BR',{minimumFractionDigits:2})} contratado</div></div>
-  `;
-  document.getElementById('rel-thead').innerHTML='<th>Colaborador</th><th>Dias Trab.</th><th>Total Horas</th><th>Atend.</th><th>Vendas</th><th>Receita</th><th>T.Criadas</th><th>T.Conc.</th><th></th>';
-  document.getElementById('tbody-rel').innerHTML=colabs.map(c=>{
-    let dt=0,min=0,ta=0,tv=0,tr=0,tCri=0,tCon=0;
-    const vendasMesColab=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&(v.criadoPor===c.nome||v.responsavel===c.nome)&&v.status==='fechado');
-    tv=vendasMesColab.length;tr=vendasMesColab.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
-    dias.forEach(data=>{const mm=metDia(c.nome,data);if(mm.entrada!=='--')dt++;const p=getPonto(c.nome,data);if(p.entrada&&p.saida){const parse=h=>{const[hh,mi]=h.split(':').map(Number);return hh*60+mi;};let mn=parse(p.saida)-parse(p.entrada);if(p.saida_almoco&&p.volta_almoco)mn-=(parse(p.volta_almoco)-parse(p.saida_almoco));if(mn>0)min+=mn;}ta+=mm.atend;tCri+=mm.tCri;tCon+=mm.tCon;});
-    const hT=min>0?`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`:'--';
-    return`<tr><td data-label="Colaborador" style="font-weight:600">${c.nome}</td><td data-label="Dias Trab."><span class="tag tag-blue">${dt} dias</span></td><td data-label="Total Horas"><strong>${hT}</strong></td><td data-label="Atend.">${ta}</td><td data-label="Vendas">${tv}</td><td data-label="Receita" style="color:var(--gold);font-weight:600;">R$ ${tr.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="T.Criadas">${tCri}</td><td data-label="T.Conc.">${tCon}</td><td data-label=""><button class="btn btn-outline btn-sm" onclick="expandirRel('${c.nome}','${mes}')">Ver dias</button></td></tr>`;
-  }).join('')||'<tr><td colspan="9" class="empty-state">Sem dados</td></tr>';
-}
-function expandirRel(nome,mes){
-  const [y,m]=mes.split('-').map(Number);const dias=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){dias.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);}
-  document.getElementById('rel-det-title').textContent='Detalhe — '+nome+' — '+new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
-  document.getElementById('rel-det-thead').innerHTML='<th>Data</th><th>Dia</th><th>Entrada</th><th>Saída</th><th>Horas</th><th>Atend.</th><th>Vendas</th><th>Receita</th><th>T.Cri.</th><th>T.Con.</th>';
-  document.getElementById('tbody-rel-det').innerHTML=dias.map(data=>{
-    const m2=metDia(nome,data);const dO=new Date(data+'T12:00:00');const fds=[0,6].includes(dO.getDay());
-    return`<tr style="${fds?'opacity:.4':''}"><td>${dO.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</td><td style="color:var(--muted)">${dO.toLocaleDateString('pt-BR',{weekday:'short'})}</td><td>${m2.entrada!=='--'?`<span class="tag tag-green" style="font-size:10px">${m2.entrada}</span>`:'—'}</td><td>${m2.saida!=='--'?`<span class="tag tag-red" style="font-size:10px">${m2.saida}</span>`:'—'}</td><td><strong>${m2.horas}</strong></td><td>${m2.atend||'—'}</td><td>${m2.vend||'—'}</td><td style="font-size:12px;color:${m2.rec>0?'var(--gold)':'var(--muted)'};">${m2.rec>0?'R$ '+m2.rec.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td><td>${m2.tCri||'—'}</td><td>${m2.tCon||'—'}</td></tr>`;
-  }).join('');
-  document.getElementById('rel-detalhe').style.display='block';
-  document.getElementById('rel-detalhe').scrollIntoView({behavior:'smooth'});
-}
+function metDia(nome,data){ const p=getPonto(nome,data); const a=S.atendimentos.filter(x=>(x.data===data||x.data_atend===data)&&x.responsavel===nome).length; const v=S.vendas.filter(x=>(x.data===data||x.data_venda===data)&&(x.criadoPor===nome||x.responsavel===nome)&&x.status==='fechado'); const tc=S.tarefas.filter(x=>x.criadoPor===nome&&x.criadoEm&&x.criadoEm.startsWith(data)).length; const tk=S.tarefas.filter(x=>x.status==='concluido'&&x.prazo===data&&x.responsavel===nome).length; const recTotal=v.reduce((s,x)=>s+(parseFloat(x.valor)||0),0); return{entrada:p.entrada||'--',saida:p.saida||'--',horas:calcHoras(p),atend:a,vend:v.length,rec:recTotal,tCri:tc,tCon:tk}; }
+function renderRelDia(colabs){ const data=document.getElementById('rel-dia').value; if(!data)return; const lbl=new Date(data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}); document.getElementById('rel-title').textContent='Relatório Diário — '+lbl; document.getElementById('rel-detalhe').style.display='none'; const ta=S.atendimentos.filter(a=>(a.data===data||a.data_atend===data)).length; const tv=S.vendas.filter(v=>(v.data===data||v.data_venda===data)&&v.status==='fechado'); const totalCtDia=tv.reduce((s,v)=>s+(parseFloat(v.valor)||0),0); let vlrRecDia=0; S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3){const iso=pts[2]+'-'+pts[1]+'-'+pts[0];if(iso===data)vlrRecDia+=parseFloat(p.valor)||0;}}}});});}); document.getElementById('rel-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${ta}</div><div class="stat-icon">📋</div></div><div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${tv.length}</div><div class="stat-icon">📄</div><div class="stat-change">R$ ${totalCtDia.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${vlrRecDia.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div><div class="stat-card"><div class="stat-label">Tarefas</div><div class="stat-val">${S.tarefas.filter(t=>t.criadoEm&&t.criadoEm.startsWith(data)).length}</div><div class="stat-icon">✅</div></div>`; document.getElementById('rel-thead').innerHTML='<th>Colaborador</th><th>Entrada</th><th>Saída</th><th>Horas</th><th>Atendimentos</th><th>Vendas</th><th>Receita</th><th>T.Criadas</th><th>T.Conc.</th>'; document.getElementById('tbody-rel').innerHTML=colabs.map(c=>{const m=metDia(c.nome,data);return`<tr><td data-label="Colaborador" style="font-weight:600">${c.nome}</td><td data-label="Entrada">${m.entrada!=='--'?`<span class="tag tag-green">${m.entrada}</span>`:'<span class="tag tag-muted">--</span>'}</td><td data-label="Saída">${m.saida!=='--'?`<span class="tag tag-red">${m.saida}</span>`:'<span class="tag tag-muted">--</span>'}</td><td data-label="Horas"><strong>${m.horas}</strong></td><td data-label="Atend.">${m.atend}</td><td data-label="Vendas">${m.vend}</td><td data-label="Receita" style="color:var(--gold);font-weight:600;">R$ ${m.rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="T.Cri.">${m.tCri}</td><td data-label="T.Con.">${m.tCon}</td></tr>`;}).join('')||'<tr><td colspan="9" class="empty-state">Sem dados</td></tr>'; }
+function renderRelMes(colabs){ const mes=document.getElementById('rel-mes').value; if(!mes)return; const[y,m]=mes.split('-').map(Number); const dias=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){dias.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);} const lbl=new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); document.getElementById('rel-title').textContent='Relatório Mensal — '+lbl; const dp=Object.keys(S.ponto).filter(d=>d.startsWith(mes)).length; const am=S.atendimentos.filter(a=>(a.data||a.data_atend||'').startsWith(mes)); const vm=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&v.status==='fechado'); const nTotal=vm.length; const totalContratado=vm.reduce((s,v)=>s+(parseFloat(v.valor)||0),0); let vlrRecebido=0; S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)vlrRecebido+=parseFloat(p.valor)||0;}}});}); }); document.getElementById('rel-stats').innerHTML=`<div class="stat-card"><div class="stat-label">Dias com Ponto</div><div class="stat-val">${dp}</div><div class="stat-icon">🕐</div></div><div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${am.length}</div><div class="stat-icon">📋</div></div><div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${nTotal}</div><div class="stat-icon">📄</div><div class="stat-change">R$ ${totalContratado.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card"><div class="stat-label">Receita Recebida</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${vlrRecebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div>`; document.getElementById('rel-thead').innerHTML='<th>Colaborador</th><th>Dias Trab.</th><th>Total Horas</th><th>Atend.</th><th>Vendas</th><th>Receita</th><th>T.Criadas</th><th>T.Conc.</th><th></th>'; document.getElementById('tbody-rel').innerHTML=colabs.map(c=>{ let dt=0,min=0,ta=0,tv=0,tr=0,tCri=0,tCon=0; const vendasMesColab=S.vendas.filter(v=>(v.data||v.data_venda||'').startsWith(mes)&&(v.criadoPor===c.nome||v.responsavel===c.nome)&&v.status==='fechado'); tv=vendasMesColab.length;tr=vendasMesColab.reduce((s,v)=>s+(parseFloat(v.valor)||0),0); dias.forEach(data=>{const mm=metDia(c.nome,data);if(mm.entrada!=='--')dt++;const p=getPonto(c.nome,data);if(p.entrada&&p.saida){const parse=h=>{const[hh,mi]=h.split(':').map(Number);return hh*60+mi;};let mn=parse(p.saida)-parse(p.entrada);if(p.saida_almoco&&p.volta_almoco)mn-=(parse(p.volta_almoco)-parse(p.saida_almoco));if(mn>0)min+=mn;}ta+=mm.atend;tCri+=mm.tCri;tCon+=mm.tCon;}); const hT=min>0?`${String(Math.floor(min/60)).padStart(2,'0')}:${String(min%60).padStart(2,'0')}`:'--'; return`<tr><td data-label="Colaborador" style="font-weight:600">${c.nome}</td><td data-label="Dias Trab."><span class="tag tag-blue">${dt} dias</span></td><td data-label="Total Horas"><strong>${hT}</strong></td><td data-label="Atend.">${ta}</td><td data-label="Vendas">${tv}</td><td data-label="Receita" style="color:var(--gold);font-weight:600;">R$ ${tr.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="T.Criadas">${tCri}</td><td data-label="T.Conc.">${tCon}</td><td data-label=""><button class="btn btn-outline btn-sm" onclick="expandirRel('${c.nome}','${mes}')">Ver dias</button></td></tr>`; }).join('')||'<tr><td colspan="9" class="empty-state">Sem dados</td></tr>'; }
+function expandirRel(nome,mes){ const[y,m]=mes.split('-').map(Number);const dias=[];const d=new Date(y,m-1,1);while(d.getMonth()===m-1){dias.push(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);} document.getElementById('rel-det-title').textContent='Detalhe — '+nome+' — '+new Date(mes+'-01T12:00:00').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}); document.getElementById('rel-det-thead').innerHTML='<th>Data</th><th>Dia</th><th>Entrada</th><th>Saída</th><th>Horas</th><th>Atend.</th><th>Vendas</th><th>Receita</th><th>T.Cri.</th><th>T.Con.</th>'; document.getElementById('tbody-rel-det').innerHTML=dias.map(data=>{ const m2=metDia(nome,data);const dO=new Date(data+'T12:00:00');const fds=[0,6].includes(dO.getDay()); return`<tr style="${fds?'opacity:.4':''}"><td>${dO.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}</td><td style="color:var(--muted)">${dO.toLocaleDateString('pt-BR',{weekday:'short'})}</td><td>${m2.entrada!=='--'?`<span class="tag tag-green" style="font-size:10px">${m2.entrada}</span>`:'—'}</td><td>${m2.saida!=='--'?`<span class="tag tag-red" style="font-size:10px">${m2.saida}</span>`:'—'}</td><td><strong>${m2.horas}</strong></td><td>${m2.atend||'—'}</td><td>${m2.vend||'—'}</td><td style="font-size:12px;color:${m2.rec>0?'var(--gold)':'var(--muted)'};">${m2.rec>0?'R$ '+m2.rec.toLocaleString('pt-BR',{minimumFractionDigits:2}):'—'}</td><td>${m2.tCri||'—'}</td><td>${m2.tCon||'—'}</td></tr>`; }).join(''); document.getElementById('rel-detalhe').style.display='block'; document.getElementById('rel-detalhe').scrollIntoView({behavior:'smooth'}); }
 
 // ═══════════ RETENÇÃO ═══════════
-function verificarRetencao(){
-  const lim=new Date();lim.setMonth(lim.getMonth()-6);const limISO=lim.toISOString().slice(0,10);
-  const av=[];
-  const dp=Object.keys(S.ponto).filter(d=>d<limISO).length;if(dp>0)av.push(`⚠️ ${dp} dia(s) de ponto com mais de 6 meses.`);
-  const da=S.atendimentos.filter(a=>(a.data||a.data_atend||'')<limISO).length;if(da>0)av.push(`⚠️ ${da} atendimento(s) com mais de 6 meses.`);
-  const b=document.getElementById('retencao-banner');
-  if(av.length&&b){b.innerHTML=av.join(' &nbsp;|&nbsp; ');b.style.display='block';}
-}
+function verificarRetencao(){ const lim=new Date();lim.setMonth(lim.getMonth()-6);const limISO=lim.toISOString().slice(0,10); const av=[]; const dp=Object.keys(S.ponto).filter(d=>d<limISO).length;if(dp>0)av.push(`⚠️ ${dp} dia(s) de ponto com mais de 6 meses.`); const da=S.atendimentos.filter(a=>(a.data||a.data_atend||'')<limISO).length;if(da>0)av.push(`⚠️ ${da} atendimento(s) com mais de 6 meses.`); const b=document.getElementById('retencao-banner'); if(av.length&&b){b.innerHTML=av.join(' &nbsp;|&nbsp; ');b.style.display='block';} }
 
 // ═══════════ INIT ═══════════
 document.getElementById('login-screen').style.display='flex';
