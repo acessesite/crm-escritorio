@@ -339,6 +339,7 @@ img, video, iframe { max-width: 100%; }
     <div class="nav-item admin-only" onclick="nav('panorama')"><span class="icon">🔭</span> Panorama</div>
     <div class="nav-item admin-only" onclick="nav('financeiro')"><span class="icon">💳</span> Financeiro</div>
     <div class="nav-item" onclick="nav('negociacao')"><span class="icon">🤝</span> Negociação</div>
+    <div class="nav-item" onclick="nav('processos')"><span class="icon">⚖️</span> Processos</div>
     <div class="nav-label">Cadastros</div>
     <div class="nav-item" onclick="nav('clientes')"><span class="icon">👤</span> Clientes</div>
     <div class="nav-item" onclick="nav('colaboradores')"><span class="icon">👥</span> Colaboradores</div>
@@ -552,6 +553,57 @@ img, video, iframe { max-width: 100%; }
       </div>
     </section>
 
+    <!-- PROCESSOS -->
+    <section class="section" id="sec-processos">
+
+      <!-- Filtros -->
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+        <div style="display:flex;gap:0;border:1px solid var(--border-s);border-radius:8px;overflow:hidden;" id="proc-area-tabs">
+          <button class="proc-area-tab active" onclick="setProcArea('')"       style="padding:8px 14px;background:linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05));color:var(--gold);border:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;font-weight:500;">Todas</button>
+          <button class="proc-area-tab" onclick="setProcArea('Trabalhista')"   style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">⚖️ Trabalhista</button>
+          <button class="proc-area-tab" onclick="setProcArea('Cível')"         style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🏛️ Cível</button>
+          <button class="proc-area-tab" onclick="setProcArea('Família')"       style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">👨‍👩‍👧 Família</button>
+          <button class="proc-area-tab" onclick="setProcArea('Criminal')"      style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🔒 Criminal</button>
+          <button class="proc-area-tab" onclick="setProcArea('Empresarial')"   style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🏢 Empresarial</button>
+          <button class="proc-area-tab" onclick="setProcArea('Tributário')"    style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">💼 Tributário</button>
+          <button class="proc-area-tab" onclick="setProcArea('Previdenciário')"style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🛡️ Previdenciário</button>
+          <button class="proc-area-tab" onclick="setProcArea('Administrativo')"style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">📋 Administrativo</button>
+          <button class="proc-area-tab" onclick="setProcArea('Outro')"         style="padding:8px 14px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">📌 Outro</button>
+        </div>
+      </div>
+
+      <!-- Sub-filtro Previdenciário — aparece só quando área = Previdenciário -->
+      <div id="prev-subtipo-bar" style="display:none;gap:0;border:1px solid rgba(76,201,201,0.35);border-radius:8px;overflow:hidden;margin-bottom:4px;flex-wrap:wrap;">
+        <button class="prev-sub-tab active" onclick="setPrevSubtipo('')" style="padding:7px 13px;background:linear-gradient(135deg,rgba(76,201,201,.15),rgba(76,201,201,.05));color:#4CC9C9;border:none;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;font-weight:500;">Todos</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Maternidade')"         style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🤱 Maternidade</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('BPC/LOAS')"            style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">♿ BPC/LOAS</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Auxílio-Doença')"      style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🏥 Auxílio-Doença</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Aposentadoria')"       style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🎯 Aposentadoria</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Pensão por Morte')"    style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">🕊️ Pensão por Morte</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Acidente de Trabalho')"style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">⚠️ Acidente de Trabalho</button>
+        <button class="prev-sub-tab" onclick="setPrevSubtipo('Outro Previdenciário')"style="padding:7px 13px;background:none;color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;">📌 Outro</button>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;margin-top:12px;">
+        <input class="search-input" id="proc-busca" placeholder="🔍 Buscar cliente ou processo..." oninput="renderProcessos()" style="width:280px;">
+        <select class="search-input" id="proc-status-fil" style="width:160px;" onchange="renderProcessos()">
+          <option value="">Todos os status</option>
+          <option value="ativo">Ativo</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="encerrado">Encerrado</option>
+          <option value="arquivado">Arquivado</option>
+        </select>
+        <select class="search-input" id="proc-resp-fil" style="width:200px;" onchange="renderProcessos()">
+          <option value="">Todos os responsáveis</option>
+        </select>
+        <div style="margin-left:auto;font-size:12px;color:var(--muted);" id="proc-count"></div>
+      </div>
+
+      <!-- Cards grid -->
+      <div id="proc-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;"></div>
+
+    </section>
+
     <!-- COLABORADORES -->
     <section class="section" id="sec-colaboradores">
       <div class="card">
@@ -639,6 +691,144 @@ img, video, iframe { max-width: 100%; }
       <button class="btn btn-ghost" onclick="closeM('m-editar-ponto')">Cancelar</button>
       <button class="btn btn-gold" onclick="salvarEdicaoPonto()">✅ Salvar Alterações</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL NOVO / EDITAR PROCESSO -->
+<div class="modal-overlay" id="m-processo">
+  <div class="modal" style="width:620px;">
+    <div class="modal-header">
+      <div class="modal-title" id="m-proc-title">Novo Processo</div>
+      <button class="modal-close" onclick="closeM('m-processo')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full"><label>Cliente *</label><select id="proc-cli"></select></div>
+      <div class="form-group full"><label>Título / Descrição do Processo *</label><input type="text" id="proc-titulo" placeholder="Ex: Rescisão indireta por assédio moral"></div>
+      <div class="form-group"><label>Área Jurídica *</label>
+        <select id="proc-area-sel" onchange="togglePrevSubtipo('proc-prev-wrap')">
+          <option value="Trabalhista">⚖️ Trabalhista</option>
+          <option value="Cível">🏛️ Cível</option>
+          <option value="Família">👨‍👩‍👧 Família</option>
+          <option value="Criminal">🔒 Criminal</option>
+          <option value="Empresarial">🏢 Empresarial</option>
+          <option value="Tributário">💼 Tributário</option>
+          <option value="Previdenciário">🛡️ Previdenciário</option>
+          <option value="Administrativo">📋 Administrativo</option>
+          <option value="Outro">📌 Outro</option>
+        </select>
+      </div>
+      <div class="form-group" id="proc-prev-wrap" style="display:none;">
+        <label>Tipo Previdenciário</label>
+        <select id="proc-prev-tipo">
+          <option value="">Selecione...</option>
+          <option value="Maternidade">🤱 Maternidade</option>
+          <option value="BPC/LOAS">♿ BPC/LOAS</option>
+          <option value="Auxílio-Doença">🏥 Auxílio-Doença</option>
+          <option value="Aposentadoria">🎯 Aposentadoria</option>
+          <option value="Pensão por Morte">🕊️ Pensão por Morte</option>
+          <option value="Acidente de Trabalho">⚠️ Acidente de Trabalho</option>
+          <option value="Outro Previdenciário">📌 Outro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Número do Processo</label><input type="text" id="proc-numero" placeholder="0000000-00.0000.0.00.0000"></div>
+      <div class="form-group"><label>Vara / Tribunal</label><input type="text" id="proc-vara" placeholder="Ex: 3ª Vara do Trabalho de Niterói"></div>
+      <div class="form-group"><label>Responsável</label><select id="proc-resp-sel"></select></div>
+      <div class="form-group"><label>Fase Atual</label>
+        <select id="proc-fase">
+          <option value="Inicial">Inicial</option>
+          <option value="Instrução">Instrução</option>
+          <option value="Sentença">Sentença</option>
+          <option value="Recurso">Recurso</option>
+          <option value="Execução">Execução</option>
+          <option value="Acordo">Acordo</option>
+          <option value="Arquivado">Arquivado</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="proc-status-sel">
+          <option value="ativo">Ativo</option>
+          <option value="suspenso">Suspenso</option>
+          <option value="encerrado">Encerrado</option>
+          <option value="arquivado">Arquivado</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Data de Abertura</label><input type="date" id="proc-data"></div>
+      <div class="form-group"><label>Valor da Causa R$</label><input type="number" id="proc-valor" step="0.01" placeholder="0.00"></div>
+      <div class="form-group full"><label>Observações / Histórico Inicial</label><textarea id="proc-obs" placeholder="Descreva o caso, pedidos, contexto..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-processo')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarProcesso()">Salvar Processo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE PROCESSO -->
+<div class="modal-overlay" id="m-proc-detalhe" style="align-items:flex-start;padding:20px 0;overflow-y:auto;">
+  <div class="modal" style="width:720px;max-width:98vw;margin:auto;max-height:none;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="mpd-titulo" style="font-size:20px;"></div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;" id="mpd-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeM('m-proc-detalhe')">✕</button>
+    </div>
+    <div id="mpd-tags" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;"></div>
+
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;">
+      <button class="ficha-tab active" id="mpdtab-info"    onclick="mpdTab('info')">📋 Informações</button>
+      <button class="ficha-tab"        id="mpdtab-andamentos" onclick="mpdTab('andamentos')">📝 Andamentos</button>
+      <button class="ficha-tab"        id="mpdtab-docs"    onclick="mpdTab('docs')">📎 Documentos</button>
+    </div>
+
+    <!-- Panel: Informações -->
+    <div id="mpdpanel-info">
+      <div class="form-grid" id="mpd-form-grid"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+        <button class="btn btn-danger btn-sm" onclick="confirmarDelProcesso()">🗑 Excluir Processo</button>
+        <span id="mpd-save-ok" style="display:none;color:var(--green);font-size:13px;align-self:center;">✅ Salvo!</span>
+        <button class="btn btn-gold" onclick="salvarEdicaoProcesso()">Salvar Alterações</button>
+      </div>
+    </div>
+
+    <!-- Panel: Andamentos -->
+    <div id="mpdpanel-andamentos" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;">Tipo</div>
+        <select id="mpd-and-tipo" style="width:100%;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;margin-bottom:12px;">
+          <option>Petição protocolada</option>
+          <option>Audiência realizada</option>
+          <option>Decisão/Sentença</option>
+          <option>Recurso interposto</option>
+          <option>Acordo realizado</option>
+          <option>Diligência</option>
+          <option>Contato com cliente</option>
+          <option>Prazo cumprido</option>
+          <option>Outro</option>
+        </select>
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin-bottom:8px;">Descrição *</div>
+        <textarea id="mpd-and-texto" placeholder="Descreva o andamento, decisão, prazo..." style="width:100%;min-height:90px;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;"></textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <button class="btn btn-gold" onclick="mpdAddAndamento()">+ Registrar Andamento</button>
+        </div>
+      </div>
+      <div id="mpd-and-lista" style="display:flex;flex-direction:column;gap:8px;max-height:380px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Panel: Documentos -->
+    <div id="mpdpanel-docs" style="display:none;">
+      <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.08em;margin-bottom:10px;">Adicionar Link / Documento</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <input type="text" id="mpd-doc-nome" placeholder="Nome do documento" style="flex:1;min-width:160px;">
+          <input type="text" id="mpd-doc-link" placeholder="Link (Google Drive, etc.)" style="flex:2;min-width:200px;">
+          <button class="btn btn-gold btn-sm" onclick="mpdAddDoc()">+ Adicionar</button>
+        </div>
+      </div>
+      <div id="mpd-doc-lista" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
   </div>
 </div>
 
@@ -958,6 +1148,7 @@ if (!S.vendas) S.vendas = [];
 if (!S.ponto) S.ponto = {};
 if (!S.atividades) S.atividades = [];
 if (!S.negociacoes) S.negociacoes = [];
+if (!S.processos) S.processos = [];
 
 const extrasColab = (S.colaboradores || []).filter(c => c.id > 5);
 S.colaboradores = [...COLABS_FIXOS, ...extrasColab];
@@ -983,7 +1174,8 @@ function syncToFirebase() {
       atendimentos: S.atendimentos,
       vendas: S.vendas,
       atividades: S.atividades.slice(0, 60),
-      negociacoes: S.negociacoes
+      negociacoes: S.negociacoes,
+      processos: S.processos
     };
     showSync('⟳ Sincronizando...', '');
     const ok = await fbSet('crm', data);
@@ -1001,6 +1193,7 @@ async function loadFromFirebase() {
     if (data.vendas) S.vendas = data.vendas;
     if (data.atividades) S.atividades = data.atividades;
     if (data.negociacoes) S.negociacoes = data.negociacoes;
+    if (data.processos) S.processos = data.processos;
   }
   await loadPontoFromFirebase();
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
@@ -1112,13 +1305,14 @@ function atualizarSidebar() {
 }
 
 // ═══════════ NAVIGATION ═══════════
-const TITLES={dashboard:'Dashboard',panorama:'Panorama do Escritório',financeiro:'Financeiro',negociacao:'Negociação',ponto:'Ponto Eletrônico',tarefas:'Gestão de Tarefas',atendimentos:'Atendimentos',vendas:'Vendas & Contratos',relatorios:'Relatórios',clientes:'Clientes',colaboradores:'Colaboradores'};
+const TITLES={dashboard:'Dashboard',panorama:'Panorama do Escritório',financeiro:'Financeiro',negociacao:'Negociação',ponto:'Ponto Eletrônico',tarefas:'Gestão de Tarefas',atendimentos:'Atendimentos',vendas:'Vendas & Contratos',relatorios:'Relatórios',clientes:'Clientes',colaboradores:'Colaboradores',processos:'Processos Jurídicos'};
 const ACTIONS={
   tarefas:'<button class="btn btn-gold" onclick="openMT()">+ Nova Tarefa</button>',
   atendimentos:'<button class="btn btn-gold" onclick="openAtend()">+ Registrar</button>',
   vendas:'<button class="btn btn-gold" onclick="openVenda()">+ Nova Venda</button>',
   clientes:'<button class="btn btn-gold" onclick="openM(&quot;m-cliente&quot;)">+ Novo Cliente</button>',
   colaboradores:'<button class="btn btn-gold" onclick="openColab()">+ Novo Colaborador</button>',
+  processos:'<button class="btn btn-gold" onclick="openNovoProcesso()">+ Novo Processo</button>',
 };
 
 function nav(id) {
@@ -1140,6 +1334,7 @@ function nav(id) {
   if(id==='panorama') initPanorama();
   if(id==='financeiro') initFinanceiro();
   if(id==='negociacao') renderNegociacao();
+  if(id==='processos') renderProcessos();
 }
 
 function openM(id){
@@ -1340,6 +1535,415 @@ function renderPontoHist(){
     });
   });
   document.getElementById('tbody-ponto').innerHTML=rows.length?rows.join(''):'<tr><td colspan="9" class="empty-state">Sem registros</td></tr>';
+}
+
+// ═══════════ PROCESSOS ═══════════
+const PROC_AREAS = {
+  'Trabalhista':    {icon:'⚖️',  cor:'#C9A84C'},
+  'Cível':          {icon:'🏛️', cor:'#4C7EC9'},
+  'Família':        {icon:'👨‍👩‍👧',cor:'#C94C9A'},
+  'Criminal':       {icon:'🔒', cor:'#C94C4C'},
+  'Empresarial':    {icon:'🏢', cor:'#4CAF7D'},
+  'Tributário':     {icon:'💼', cor:'#9A4CC9'},
+  'Previdenciário': {icon:'🛡️', cor:'#4CC9C9'},
+  'Administrativo': {icon:'📋', cor:'#8A8278'},
+  'Outro':          {icon:'📌', cor:'#8A8278'},
+};
+const PROC_STATUS_TAG = {ativo:'tag-green',suspenso:'tag-gold',encerrado:'tag-muted',arquivado:'tag-muted'};
+const PROC_FASE_COR   = {Inicial:'#4C7EC9',Instrução:'#C9A84C',Sentença:'#C94C9A',Recurso:'#C94C4C',Execução:'#9A4CC9',Acordo:'#4CAF7D',Arquivado:'#8A8278'};
+
+let _procAreaFil  = '';
+let _prevSubtipo  = '';
+let _procDetalheId = null;
+
+function togglePrevSubtipo(wrapId) {
+  const sel  = document.getElementById('proc-area-sel') || document.getElementById('proc-edit-area');
+  const wrap = document.getElementById(wrapId);
+  if (wrap) wrap.style.display = (sel && sel.value === 'Previdenciário') ? 'block' : 'none';
+}
+
+function setProcArea(area) {
+  _procAreaFil = area;
+  _prevSubtipo  = '';  // reset subtipo ao trocar área
+
+  document.querySelectorAll('.proc-area-tab').forEach(b => {
+    const isActive = b.textContent.includes(area) || (area === '' && b.textContent.trim() === 'Todas');
+    b.style.background = isActive ? 'linear-gradient(135deg,rgba(201,168,76,.15),rgba(201,168,76,.05))' : 'none';
+    b.style.color      = isActive ? 'var(--gold)' : 'var(--muted)';
+  });
+
+  // Mostra/esconde barra de subtipos previdenciários
+  const bar = document.getElementById('prev-subtipo-bar');
+  if (bar) bar.style.display = (area === 'Previdenciário') ? 'flex' : 'none';
+
+  // Reset visual dos sub-tabs
+  document.querySelectorAll('.prev-sub-tab').forEach((b, i) => {
+    b.style.background = i === 0 ? 'linear-gradient(135deg,rgba(76,201,201,.15),rgba(76,201,201,.05))' : 'none';
+    b.style.color      = i === 0 ? '#4CC9C9' : 'var(--muted)';
+  });
+
+  renderProcessos();
+}
+
+function setPrevSubtipo(sub) {
+  _prevSubtipo = sub;
+  document.querySelectorAll('.prev-sub-tab').forEach(b => {
+    const txt = b.textContent.trim();
+    const isActive = sub === '' ? txt === 'Todos' : txt.includes(sub);
+    b.style.background = isActive ? 'linear-gradient(135deg,rgba(76,201,201,.15),rgba(76,201,201,.05))' : 'none';
+    b.style.color      = isActive ? '#4CC9C9' : 'var(--muted)';
+  });
+  renderProcessos();
+}
+
+function renderProcessos() {
+  if (!S.processos) S.processos = [];
+
+  // preenche filtro responsável
+  const selResp = document.getElementById('proc-resp-fil');
+  if (selResp) {
+    const prev = selResp.value;
+    selResp.innerHTML = '<option value="">Todos os responsáveis</option>' +
+      S.colaboradores.filter(c => c.perfil !== 'cliente').map(c =>
+        `<option value="${c.nome}"${c.nome===prev?' selected':''}>${c.nome}</option>`).join('');
+  }
+
+  const busca      = (document.getElementById('proc-busca')?.value||'').toLowerCase();
+  const statusFil  = document.getElementById('proc-status-fil')?.value||'';
+  const respFil    = document.getElementById('proc-resp-fil')?.value||'';
+
+  let lista = S.processos;
+  if (_procAreaFil) lista = lista.filter(p => p.area === _procAreaFil);
+  if (_prevSubtipo) lista = lista.filter(p => p.prevTipo === _prevSubtipo);
+  if (statusFil)    lista = lista.filter(p => p.status === statusFil);
+  if (respFil)      lista = lista.filter(p => p.responsavel === respFil);
+  if (busca)        lista = lista.filter(p =>
+    (p.titulo||'').toLowerCase().includes(busca) ||
+    (p.clienteNome||'').toLowerCase().includes(busca) ||
+    (p.numero||'').toLowerCase().includes(busca)
+  );
+
+  const countEl = document.getElementById('proc-count');
+  if (countEl) countEl.textContent = lista.length + ' processo' + (lista.length !== 1 ? 's' : '');
+
+  if (!lista.length) {
+    document.getElementById('proc-grid').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><span class="icon">⚖️</span>Nenhum processo encontrado.</div>';
+    return;
+  }
+
+  document.getElementById('proc-grid').innerHTML = lista.map(p => {
+    const areaInfo = PROC_AREAS[p.area] || PROC_AREAS['Outro'];
+    const corFase  = PROC_FASE_COR[p.fase] || '#8A8278';
+    const andCount = (p.andamentos||[]).length;
+    const docCount = (p.docs||[]).length;
+    const dataFmt  = p.data ? new Date(p.data+'T12:00:00').toLocaleDateString('pt-BR') : '';
+    return `<div onclick="abrirProcesso(${p.id})" style="
+        background:var(--dark-3);border:1px solid var(--border);border-radius:14px;
+        padding:0;cursor:pointer;transition:all .15s;overflow:hidden;
+        border-top:3px solid ${areaInfo.cor};"
+      onmouseover="this.style.borderColor='${areaInfo.cor}';this.style.transform='translateY(-2px)'"
+      onmouseout="this.style.borderColor='var(--border)';this.style.borderTopColor='${areaInfo.cor}';this.style.transform=''">
+      <div style="padding:16px 18px 12px;">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
+          <div style="font-size:18px;line-height:1;">${areaInfo.icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;line-height:1.4;color:var(--text);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${p.titulo}</div>
+          </div>
+          <span class="tag ${PROC_STATUS_TAG[p.status]||'tag-muted'}" style="font-size:10px;flex-shrink:0;">${p.status}</span>
+        </div>
+        <!-- Cliente -->
+        <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">👤 ${p.clienteNome||'—'}</div>
+        <!-- Área + Fase + SubTipo Prev -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          <span style="background:${areaInfo.cor}22;color:${areaInfo.cor};border:1px solid ${areaInfo.cor}44;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:500;">${p.area}</span>
+          ${p.prevTipo ? `<span style="background:rgba(76,201,201,.15);color:#4CC9C9;border:1px solid rgba(76,201,201,.3);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:500;">${p.prevTipo}</span>` : ''}
+          <span style="background:${corFase}22;color:${corFase};border:1px solid ${corFase}44;border-radius:20px;padding:2px 8px;font-size:10px;">${p.fase||'—'}</span>
+        </div>
+        <!-- Número -->
+        ${p.numero ? `<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:monospace;">📄 ${p.numero}</div>` : ''}
+        <!-- Vara -->
+        ${p.vara ? `<div style="font-size:10px;color:var(--muted);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🏛️ ${p.vara}</div>` : ''}
+      </div>
+      <!-- Footer -->
+      <div style="padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--dark-4);">
+        <div style="display:flex;gap:12px;">
+          <span style="font-size:11px;color:var(--muted);">📝 ${andCount} andamento${andCount!==1?'s':''}</span>
+          <span style="font-size:11px;color:var(--muted);">📎 ${docCount} doc${docCount!==1?'s':''}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">
+          ${p.responsavel ? `<span style="color:var(--muted);">👤 ${p.responsavel.split(' ')[0]}</span>` : ''}
+          ${dataFmt ? `<span style="margin-left:8px;">📅 ${dataFmt}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openNovoProcesso() {
+  document.getElementById('m-proc-title').textContent = 'Novo Processo';
+  document.getElementById('m-processo').dataset.editId = '';
+  fillClientes('proc-cli');
+  fillColabs('proc-resp-sel', eu());
+  document.getElementById('proc-titulo').value       = '';
+  document.getElementById('proc-numero').value       = '';
+  document.getElementById('proc-vara').value         = '';
+  document.getElementById('proc-obs').value          = '';
+  document.getElementById('proc-valor').value        = '';
+  document.getElementById('proc-data').value         = new Date().toISOString().slice(0,10);
+  document.getElementById('proc-area-sel').value     = 'Trabalhista';
+  document.getElementById('proc-prev-tipo').value    = '';
+  document.getElementById('proc-prev-wrap').style.display = 'none';
+  document.getElementById('proc-fase').value         = 'Inicial';
+  document.getElementById('proc-status-sel').value   = 'ativo';
+  openM('m-processo');
+}
+
+function salvarProcesso() {
+  const titulo = document.getElementById('proc-titulo').value.trim();
+  const cliId  = document.getElementById('proc-cli').value;
+  if (!titulo || !cliId) { alert('Preencha o cliente e o título.'); return; }
+
+  const editId = parseInt(document.getElementById('m-processo').dataset.editId||'0');
+  const cli    = S.clientes.find(x => String(x.id) === String(cliId));
+  const cliNome = cli ? cli.nome : cliId;
+
+  const dados = {
+    clienteId:   cliId,
+    clienteNome: cliNome,
+    titulo,
+    area:        document.getElementById('proc-area-sel').value,
+    prevTipo:    document.getElementById('proc-area-sel').value === 'Previdenciário'
+                   ? (document.getElementById('proc-prev-tipo').value || '')
+                   : '',
+    numero:      document.getElementById('proc-numero').value.trim(),
+    vara:        document.getElementById('proc-vara').value.trim(),
+    responsavel: document.getElementById('proc-resp-sel').value,
+    fase:        document.getElementById('proc-fase').value,
+    status:      document.getElementById('proc-status-sel').value,
+    data:        document.getElementById('proc-data').value,
+    valor:       parseFloat(document.getElementById('proc-valor').value)||0,
+    obs:         document.getElementById('proc-obs').value.trim(),
+  };
+
+  if (editId) {
+    const p = S.processos.find(x => x.id === editId);
+    if (p) Object.assign(p, dados);
+  } else {
+    S.processos.unshift({ id: genId(), ...dados, andamentos: [], docs: [], criadoEm: new Date().toISOString(), criadoPor: eu() });
+    addAtiv('⚖️ Processo: ' + cliNome + ' — ' + titulo);
+  }
+  save();
+  closeM('m-processo');
+  renderProcessos();
+}
+
+// ── Detalhe processo ──
+function abrirProcesso(id) {
+  const p = S.processos.find(x => x.id === id);
+  if (!p) return;
+  _procDetalheId = id;
+  if (!p.andamentos) p.andamentos = [];
+  if (!p.docs) p.docs = [];
+
+  document.getElementById('mpd-titulo').textContent = p.titulo;
+  const areaInfo = PROC_AREAS[p.area] || PROC_AREAS['Outro'];
+  document.getElementById('mpd-sub').textContent =
+    [p.clienteNome, p.numero, p.vara].filter(Boolean).join(' · ');
+
+  const corFase = PROC_FASE_COR[p.fase] || '#8A8278';
+  document.getElementById('mpd-tags').innerHTML =
+    `<span style="background:${areaInfo.cor}22;color:${areaInfo.cor};border:1px solid ${areaInfo.cor}44;border-radius:20px;padding:3px 10px;font-size:11px;">${areaInfo.icon} ${p.area}</span>` +
+    (p.prevTipo ? `<span style="background:rgba(76,201,201,.15);color:#4CC9C9;border:1px solid rgba(76,201,201,.3);border-radius:20px;padding:3px 10px;font-size:11px;">${p.prevTipo}</span>` : '') +
+    `<span class="tag ${PROC_STATUS_TAG[p.status]||'tag-muted'}">${p.status}</span>` +
+    `<span style="background:${corFase}22;color:${corFase};border:1px solid ${corFase}44;border-radius:20px;padding:3px 10px;font-size:11px;">${p.fase||'—'}</span>` +
+    (p.valor ? `<span class="tag tag-gold">R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : '');
+  fillClientes('proc-edit-cli');
+  document.getElementById('mpd-form-grid').innerHTML = `
+    <div class="form-group full"><label>Cliente</label><select id="proc-edit-cli">${S.clientes.map(c=>`<option value="${c.id}"${String(c.id)===String(p.clienteId)?' selected':''}>${c.nome}</option>`).join('')}</select></div>
+    <div class="form-group full"><label>Título *</label><input type="text" id="proc-edit-titulo" value="${(p.titulo||'').replace(/"/g,'&quot;')}"></div>
+    <div class="form-group"><label>Área</label><select id="proc-edit-area" onchange="togglePrevSubtipo('proc-edit-prev-wrap')">${Object.keys(PROC_AREAS).map(a=>`<option${p.area===a?' selected':''}>${a}</option>`).join('')}</select></div>
+    <div class="form-group" id="proc-edit-prev-wrap" style="display:${p.area==='Previdenciário'?'flex':'none'};flex-direction:column;gap:6px;">
+      <label>Tipo Previdenciário</label>
+      <select id="proc-edit-prev-tipo">
+        <option value="">Selecione...</option>
+        <option value="Maternidade"${p.prevTipo==='Maternidade'?' selected':''}>🤱 Maternidade</option>
+        <option value="BPC/LOAS"${p.prevTipo==='BPC/LOAS'?' selected':''}>♿ BPC/LOAS</option>
+        <option value="Auxílio-Doença"${p.prevTipo==='Auxílio-Doença'?' selected':''}>🏥 Auxílio-Doença</option>
+        <option value="Aposentadoria"${p.prevTipo==='Aposentadoria'?' selected':''}>🎯 Aposentadoria</option>
+        <option value="Pensão por Morte"${p.prevTipo==='Pensão por Morte'?' selected':''}>🕊️ Pensão por Morte</option>
+        <option value="Acidente de Trabalho"${p.prevTipo==='Acidente de Trabalho'?' selected':''}>⚠️ Acidente de Trabalho</option>
+        <option value="Outro Previdenciário"${p.prevTipo==='Outro Previdenciário'?' selected':''}>📌 Outro</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Número</label><input type="text" id="proc-edit-numero" value="${p.numero||''}"></div>
+    <div class="form-group full"><label>Vara / Tribunal</label><input type="text" id="proc-edit-vara" value="${p.vara||''}"></div>
+    <div class="form-group"><label>Responsável</label><select id="proc-edit-resp">${S.colaboradores.filter(c=>c.perfil!=='cliente').map(c=>`<option value="${c.nome}"${c.nome===p.responsavel?' selected':''}>${c.nome}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Fase</label><select id="proc-edit-fase">${Object.keys(PROC_FASE_COR).map(f=>`<option${p.fase===f?' selected':''}>${f}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Status</label><select id="proc-edit-status"><option value="ativo"${p.status==='ativo'?' selected':''}>Ativo</option><option value="suspenso"${p.status==='suspenso'?' selected':''}>Suspenso</option><option value="encerrado"${p.status==='encerrado'?' selected':''}>Encerrado</option><option value="arquivado"${p.status==='arquivado'?' selected':''}>Arquivado</option></select></div>
+    <div class="form-group"><label>Data de Abertura</label><input type="date" id="proc-edit-data" value="${p.data||''}"></div>
+    <div class="form-group"><label>Valor da Causa R$</label><input type="number" id="proc-edit-valor" step="0.01" value="${p.valor||''}"></div>
+    <div class="form-group full"><label>Observações</label><textarea id="proc-edit-obs">${p.obs||''}</textarea></div>
+  `;
+
+  mpdTab('info');
+  openM('m-proc-detalhe');
+}
+
+function salvarEdicaoProcesso() {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  const cliId = document.getElementById('proc-edit-cli').value;
+  const cli   = S.clientes.find(x => String(x.id) === String(cliId));
+  p.clienteId   = cliId;
+  p.clienteNome = cli ? cli.nome : cliId;
+  p.titulo      = document.getElementById('proc-edit-titulo').value.trim() || p.titulo;
+  p.area        = document.getElementById('proc-edit-area').value;
+  p.prevTipo    = p.area === 'Previdenciário'
+                    ? (document.getElementById('proc-edit-prev-tipo')?.value || '')
+                    : '';
+  p.numero      = document.getElementById('proc-edit-numero').value.trim();
+  p.vara        = document.getElementById('proc-edit-vara').value.trim();
+  p.responsavel = document.getElementById('proc-edit-resp').value;
+  p.fase        = document.getElementById('proc-edit-fase').value;
+  p.status      = document.getElementById('proc-edit-status').value;
+  p.data        = document.getElementById('proc-edit-data').value;
+  p.valor       = parseFloat(document.getElementById('proc-edit-valor').value)||0;
+  p.obs         = document.getElementById('proc-edit-obs').value;
+  save();
+  renderProcessos();
+  // atualiza header do modal
+  document.getElementById('mpd-titulo').textContent = p.titulo;
+  document.getElementById('mpd-sub').textContent = [p.clienteNome, p.numero, p.vara].filter(Boolean).join(' · ');
+  const areaInfo = PROC_AREAS[p.area]||PROC_AREAS['Outro'];
+  const corFase  = PROC_FASE_COR[p.fase]||'#8A8278';
+  document.getElementById('mpd-tags').innerHTML =
+    `<span style="background:${areaInfo.cor}22;color:${areaInfo.cor};border:1px solid ${areaInfo.cor}44;border-radius:20px;padding:3px 10px;font-size:11px;">${areaInfo.icon} ${p.area}</span>` +
+    (p.prevTipo ? `<span style="background:rgba(76,201,201,.15);color:#4CC9C9;border:1px solid rgba(76,201,201,.3);border-radius:20px;padding:3px 10px;font-size:11px;">${p.prevTipo}</span>` : '') +
+    `<span class="tag ${PROC_STATUS_TAG[p.status]||'tag-muted'}">${p.status}</span>` +
+    `<span style="background:${corFase}22;color:${corFase};border:1px solid ${corFase}44;border-radius:20px;padding:3px 10px;font-size:11px;">${p.fase||'—'}</span>` +
+    (p.valor ? `<span class="tag tag-gold">R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</span>` : '');
+  const ok = document.getElementById('mpd-save-ok');
+  if (ok) { ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2000); }
+}
+
+function confirmarDelProcesso() {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  if (!confirm(`⚠️ Excluir o processo "${p.titulo}"?\n\nTodos os andamentos e documentos serão perdidos.`)) return;
+  S.processos = S.processos.filter(x => x.id !== _procDetalheId);
+  save();
+  closeM('m-proc-detalhe');
+  renderProcessos();
+}
+
+function mpdTab(tab) {
+  ['info','andamentos','docs'].forEach(t => {
+    document.getElementById('mpdpanel-'+t).style.display = t===tab ? 'block' : 'none';
+    document.getElementById('mpdtab-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab==='andamentos') mpdRenderAndamentos();
+  if (tab==='docs') mpdRenderDocs();
+}
+
+// Andamentos
+function mpdAddAndamento() {
+  const texto = document.getElementById('mpd-and-texto').value.trim();
+  if (!texto) return;
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  if (!p.andamentos) p.andamentos = [];
+  const now = new Date();
+  p.andamentos.unshift({
+    id:   genId(),
+    tipo: document.getElementById('mpd-and-tipo').value,
+    texto,
+    autor: eu(),
+    dia_semana:    now.toLocaleDateString('pt-BR',{weekday:'long'}),
+    data_registro: now.toLocaleDateString('pt-BR'),
+    hora:          now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+  });
+  save();
+  document.getElementById('mpd-and-texto').value = '';
+  addAtiv('📝 Andamento: ' + p.titulo.slice(0,30));
+  mpdRenderAndamentos();
+}
+
+function mpdRenderAndamentos() {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  const ICONS = {'Petição protocolada':'📄','Audiência realizada':'⚖️','Decisão/Sentença':'📜','Recurso interposto':'🔄','Acordo realizado':'🤝','Diligência':'🔍','Contato com cliente':'📞','Prazo cumprido':'✅','Outro':'📌'};
+  const list = p.andamentos || [];
+  document.getElementById('mpd-and-lista').innerHTML = list.length
+    ? list.map(a => `
+      <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:16px;">${ICONS[a.tipo]||'📌'}</span>
+            <span class="tag tag-blue" style="font-size:11px;">${a.tipo}</span>
+            <span style="font-size:11px;color:var(--gold);font-weight:600;">${a.autor||''}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:11px;color:var(--muted);">📅 ${a.dia_semana||''}, ${a.data_registro||''} às ${a.hora||''}</span>
+            ${isAdmin()?`<button onclick="mpdDelAndamento(${a.id})" style="background:rgba(201,76,76,.2);border:1px solid rgba(201,76,76,.4);color:#C94C4C;cursor:pointer;font-size:12px;border-radius:6px;padding:3px 8px;font-family:'DM Sans',sans-serif;">🗑</button>`:''}
+          </div>
+        </div>
+        <div style="font-size:13px;line-height:1.7;white-space:pre-wrap;">${a.texto}</div>
+      </div>`).join('')
+    : '<div class="empty-state"><span class="icon">📝</span>Nenhum andamento registrado.</div>';
+}
+
+function mpdDelAndamento(id) {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  p.andamentos = p.andamentos.filter(a => a.id !== id);
+  save(); mpdRenderAndamentos();
+}
+
+// Documentos
+function mpdAddDoc() {
+  const nome = document.getElementById('mpd-doc-nome').value.trim();
+  const link = document.getElementById('mpd-doc-link').value.trim();
+  if (!nome) return;
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  if (!p.docs) p.docs = [];
+  const now = new Date();
+  p.docs.unshift({ id:genId(), nome, link, autor:eu(), data_registro:now.toLocaleDateString('pt-BR') });
+  save();
+  document.getElementById('mpd-doc-nome').value = '';
+  document.getElementById('mpd-doc-link').value = '';
+  mpdRenderDocs();
+}
+
+function mpdRenderDocs() {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  const list = p.docs || [];
+  document.getElementById('mpd-doc-lista').innerHTML = list.length
+    ? list.map(d => `
+      <div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+          <span style="font-size:18px;">📎</span>
+          <div style="min-width:0;">
+            <div style="font-size:13px;font-weight:500;">${d.nome}</div>
+            <div style="font-size:11px;color:var(--muted);">por ${d.autor} · ${d.data_registro}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          ${d.link ? `<a href="${d.link}" target="_blank" class="btn btn-outline btn-sm" style="text-decoration:none;">🔗 Abrir</a>` : ''}
+          ${isAdmin()?`<button onclick="mpdDelDoc(${d.id})" class="btn btn-danger btn-sm">🗑</button>`:''}
+        </div>
+      </div>`).join('')
+    : '<div class="empty-state"><span class="icon">📎</span>Nenhum documento vinculado.</div>';
+}
+
+function mpdDelDoc(id) {
+  const p = S.processos.find(x => x.id === _procDetalheId);
+  if (!p) return;
+  p.docs = p.docs.filter(d => d.id !== id);
+  save(); mpdRenderDocs();
 }
 
 // ═══════════ EDIÇÃO DE PONTO (admin) ═══════════
