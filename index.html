@@ -118,7 +118,6 @@ textarea{resize:vertical;min-height:80px;}
 ::-webkit-scrollbar-thumb{background:var(--border-s);border-radius:10px;}
 #retencao-banner{display:none;background:rgba(201,168,76,.1);border-bottom:1px solid var(--border-s);padding:10px 32px;font-size:12px;color:var(--gold);line-height:1.8;letter-spacing:.02em;}
 
-/* ═══ SYNC STATUS BADGE ═══ */
 #sync-status {
   position: fixed; bottom: 16px; right: 16px; z-index: 999;
   background: var(--dark-3); border: 1px solid var(--border-s);
@@ -130,7 +129,6 @@ textarea{resize:vertical;min-height:80px;}
 #sync-status.ok { border-color: rgba(76,175,125,.4); color: var(--green); }
 #sync-status.error { border-color: rgba(201,76,76,.4); color: var(--red); }
 
-/* ═══ RESPONSIVE MOBILE ═══ */
 * { box-sizing: border-box; }
 img, video, iframe { max-width: 100%; }
 .mobile-topbar { display: none; }
@@ -275,17 +273,14 @@ img, video, iframe { max-width: 100%; }
 </head>
 <body>
 
-<!-- SYNC STATUS -->
 <div id="sync-status"></div>
 
-<!-- LOADER -->
 <div id="loader" style="display:none;position:fixed;inset:0;background:rgba(13,13,13,.85);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
   <div style="width:40px;height:40px;border:3px solid var(--border-s);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
   <div id="loader-msg" style="font-size:13px;color:var(--muted);">Carregando...</div>
 </div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
-<!-- LOGIN -->
 <div id="login-screen" style="position:fixed;inset:0;background:var(--dark);z-index:9999;display:flex;align-items:center;justify-content:center;">
   <div style="width:420px;max-width:94vw;">
     <div style="text-align:center;margin-bottom:36px;">
@@ -307,17 +302,14 @@ img, video, iframe { max-width: 100%; }
   </div>
 </div>
 
-<!-- MOBILE OVERLAY -->
 <div class="mobile-overlay" id="mob-overlay" onclick="closeMobileMenu()"></div>
 
-<!-- MOBILE TOPBAR -->
 <div class="mobile-topbar" style="display:none;">
   <button class="hamburger" onclick="openMobileMenu()">☰</button>
   <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--gold);">Camila Bitencourt</div>
   <div id="mob-avatar" style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:700;color:var(--dark);">CB</div>
 </div>
 
-<!-- SIDEBAR DRAWER (mobile) -->
 <div class="sidebar-drawer" id="sidebar-drawer">
   <div class="logo-area" style="display:flex;justify-content:space-between;align-items:center;">
     <div>
@@ -330,7 +322,6 @@ img, video, iframe { max-width: 100%; }
   <div class="user-area" id="drawer-user"></div>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo-area">
     <div class="logo-title">Camila Bitencourt<br>Advogados</div>
@@ -365,7 +356,6 @@ img, video, iframe { max-width: 100%; }
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div id="retencao-banner"></div>
   <div class="topbar">
@@ -415,15 +405,8 @@ img, video, iframe { max-width: 100%; }
         <table class='mobile-cards'>
           <thead>
             <tr>
-              <th>Colaborador</th>
-              <th>Data</th>
-              <th>Entrada</th>
-              <th>Saída Almoço</th>
-              <th>Volta</th>
-              <th>Saída</th>
-              <th>Total</th>
-              <th>Dispositivo</th>
-              <th>Localização</th>
+              <th>Colaborador</th><th>Data</th><th>Entrada</th><th>Saída Almoço</th>
+              <th>Volta</th><th>Saída</th><th>Total</th><th>Dispositivo</th><th>Localização</th><th></th>
             </tr>
           </thead>
           <tbody id='tbody-ponto'></tbody>
@@ -625,6 +608,40 @@ img, video, iframe { max-width: 100%; }
 </div>
 
 <!-- MODAIS -->
+<!-- MODAL EDITAR PONTO (admin) -->
+<div class="modal-overlay" id="m-editar-ponto">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Editar Registro de Ponto</div>
+      <button class="modal-close" onclick="closeM('m-editar-ponto')">✕</button>
+    </div>
+    <div id="mep-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.8;"></div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>▶ Entrada</label>
+        <input type="time" id="mep-entrada">
+      </div>
+      <div class="form-group">
+        <label>☕ Saída Almoço</label>
+        <input type="time" id="mep-saida-almoco">
+      </div>
+      <div class="form-group">
+        <label>↩ Volta Almoço</label>
+        <input type="time" id="mep-volta-almoco">
+      </div>
+      <div class="form-group">
+        <label>■ Saída</label>
+        <input type="time" id="mep-saida">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:12px;">⚠️ Deixe em branco os campos que não foram registrados.</div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-editar-ponto')">Cancelar</button>
+      <button class="btn btn-gold" onclick="salvarEdicaoPonto()">✅ Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="m-tarefa">
   <div class="modal">
     <div class="modal-header"><div class="modal-title" id="m-tarefa-title">Nova Tarefa</div><button class="modal-close" onclick="closeM('m-tarefa')">✕</button></div>
@@ -858,8 +875,6 @@ function getLocation(callback) {
 // ═══════════ FIREBASE CONFIG ═══════════
 const FB_URL = "https://crm-camila-952a5-default-rtdb.firebaseio.com";
 
-// ── CORREÇÃO CRÍTICA: todas as ops do Firebase são separadas por path ──
-// Ponto usa PATCH (merge) por colaborador/data para evitar sobrescrita
 async function fbGet(path) {
   try {
     const r = await fetch(FB_URL + '/' + path + '.json');
@@ -876,7 +891,6 @@ async function fbSet(path, data) {
     return r.ok;
   } catch(e) { return false; }
 }
-// ── NOVO: PATCH atômico para ponto — só atualiza campos específicos sem sobrescrever outros ──
 async function fbPatch(path, data) {
   try {
     const r = await fetch(FB_URL + '/' + path + '.json', {
@@ -901,7 +915,20 @@ async function fbDelete(path) {
   try { await fetch(FB_URL + '/' + path + '.json', { method: 'DELETE' }); } catch(e) {}
 }
 
-// ── Indicador visual de sync ──
+// ═══════════ CORREÇÃO: Chave segura para Firebase ═══════════
+// Firebase proíbe os caracteres . [ ] $ # / e espaços nas chaves.
+// Substituímos por underscore para garantir consistência entre escrita e leitura.
+function fbKey(nome) {
+  return nome
+    .replace(/\./g, '_')
+    .replace(/\[/g, '_')
+    .replace(/\]/g, '_')
+    .replace(/\$/g, '_')
+    .replace(/#/g, '_')
+    .replace(/\//g, '_')
+    .replace(/ /g, '_');
+}
+
 function showSync(msg, tipo) {
   const el = document.getElementById('sync-status');
   if(!el) return;
@@ -935,25 +962,21 @@ if (!S.negociacoes) S.negociacoes = [];
 const extrasColab = (S.colaboradores || []).filter(c => c.id > 5);
 S.colaboradores = [...COLABS_FIXOS, ...extrasColab];
 
-// ── CORREÇÃO: save() não sincroniza ponto — ponto tem sync próprio e atômico ──
 function save() {
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
   syncToFirebase();
 }
 
-// ── save especial para ponto: não usa debounce e não sincroniza o resto ──
 function savePonto() {
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
-  // NÃO chama syncToFirebase() — ponto já foi enviado atomicamente via fbPatch
 }
 
 let syncTimeout = null;
 function syncToFirebase() {
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async function() {
-    // ── CORREÇÃO: ponto NÃO é sincronizado aqui para evitar sobrescrita ──
     const data = {
       clientes: S.clientes,
       tarefas: S.tarefas,
@@ -972,47 +995,52 @@ async function loadFromFirebase() {
   showLoader('Sincronizando dados...');
   const data = await fbGet('crm');
   if (data) {
-    // ── CORREÇÃO: merge dos dados ao invés de sobrescrever ──
     if (data.clientes) S.clientes = data.clientes;
     if (data.tarefas) S.tarefas = data.tarefas;
     if (data.atendimentos) S.atendimentos = data.atendimentos;
     if (data.vendas) S.vendas = data.vendas;
     if (data.atividades) S.atividades = data.atividades;
     if (data.negociacoes) S.negociacoes = data.negociacoes;
-    // ── CORREÇÃO: ponto carregado separadamente com merge ──
-    // NÃO sobrescreve S.ponto aqui
   }
-  // ── CORREÇÃO: ponto carregado do path dedicado, com merge dos dados locais ──
   await loadPontoFromFirebase();
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
   hideLoader();
 }
 
-// ── NOVO: carrega ponto do Firebase e faz MERGE com o localStorage (nunca perde dados) ──
+// ═══════════ CORREÇÃO: loadPontoFromFirebase com fbKey ═══════════
 async function loadPontoFromFirebase() {
   const pontoDB = await fbGet('ponto');
-  if (pontoDB) {
-    // Merge: para cada data/colaborador do Firebase, preserva o local se for mais completo
-    Object.entries(pontoDB).forEach(([data, users]) => {
-      if (!S.ponto[data]) S.ponto[data] = {};
-      Object.entries(users).forEach(([colab, p]) => {
-        if (!S.ponto[data][colab]) {
-          // Não existe local: usa o do Firebase
-          S.ponto[data][colab] = p;
-        } else {
-          // Existe nos dois: merge campo a campo (prioriza o que tem valor)
-          const local = S.ponto[data][colab];
-          const campos = ['entrada','saida_almoco','volta_almoco','saida',
-                          'loc_entrada','loc_saida_almoco','loc_volta_almoco','loc_saida',
-                          'localizacao','dispositivo','navegador'];
-          campos.forEach(function(campo) {
-            if (!local[campo] && p[campo]) local[campo] = p[campo];
-          });
-        }
-      });
+  if (!pontoDB) return;
+
+  // Mapa de chave-segura → nome real para todos os colaboradores conhecidos
+  const keyMap = {};
+  S.colaboradores.forEach(function(c) {
+    keyMap[fbKey(c.nome)] = c.nome;
+  });
+
+  Object.entries(pontoDB).forEach(function([data, users]) {
+    if (!S.ponto[data]) S.ponto[data] = {};
+    Object.entries(users).forEach(function([colabKey, p]) {
+      // Resolve o nome real (suporte a dados antigos salvos com nome original)
+      const nomeReal = keyMap[colabKey] || colabKey;
+
+      if (!S.ponto[data][nomeReal]) {
+        S.ponto[data][nomeReal] = p;
+      } else {
+        // Merge campo a campo: prioriza o que tem valor
+        const local = S.ponto[data][nomeReal];
+        const campos = [
+          'entrada', 'saida_almoco', 'volta_almoco', 'saida',
+          'loc_entrada', 'loc_saida_almoco', 'loc_volta_almoco', 'loc_saida',
+          'localizacao', 'dispositivo', 'navegador'
+        ];
+        campos.forEach(function(campo) {
+          if (!local[campo] && p[campo]) local[campo] = p[campo];
+        });
+      }
     });
-  }
+  });
 }
 
 function genId() { return Date.now() + Math.floor(Math.random()*1000); }
@@ -1173,7 +1201,7 @@ function renderDash() {
   document.getElementById('feed-tar').innerHTML=tp.map(t=>`<div class="activity-item"><div class="activity-dot" style="background:${t.prioridade==='urgente'?'#C94C4C':t.prioridade==='alta'?'#C9A84C':'#4C7EC9'}"></div><div><div style="font-size:13px;">${t.titulo}</div><div style="font-size:11px;color:var(--muted);">${t.area||''}${t.prazo?' · '+new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR'):''}</div></div></div>`).join('')||'<div class="empty-state"><span class="icon">✅</span>Sem tarefas pendentes</div>';
 }
 
-// ═══════════ PONTO — LÓGICA CORRIGIDA ═══════════
+// ═══════════ PONTO — CORRIGIDO ═══════════
 let clockInt;
 function initClock(){
   clearInterval(clockInt);
@@ -1185,61 +1213,84 @@ function initClock(){
   };tick();clockInt=setInterval(tick,1000);
 }
 
-// ── CORREÇÃO CENTRAL DO PONTO ──
-// Estratégia: 
-//   1. Salva imediatamente no localStorage e atualiza UI
-//   2. Envia via fbPatch para o path exato do colaborador/data (atômico, não apaga outros)
-//   3. Geolocalização atualiza o registro DEPOIS via outro fbPatch, sem risco de concorrência
+// CORREÇÃO PRINCIPAL DO PONTO:
+// 1. Usa fbKey() para chave segura no Firebase (sem espaços, pontos, etc.)
+// 2. Captura tipoPonto/dataCaptura/horaCaptura como variáveis locais ANTES de qualquer async
+//    para evitar race condition entre batidas rápidas (ex: saída almoço → volta almoço)
+// 3. Callback da geolocalização verifica se a hora ainda bate antes de gravar,
+//    descartando se o usuário já bateu outro ponto do mesmo tipo no intervalo
 async function baterPonto(tipo) {
   const n = new Date();
   const hoje = n.toISOString().slice(0, 10);
   const hora = n.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   const user = eu();
+  const userKey = fbKey(user);
   const di = getDeviceInfo();
 
   // 1. Garante estrutura local
   if (!S.ponto[hoje]) S.ponto[hoje] = {};
   if (!S.ponto[hoje][user]) S.ponto[hoje][user] = {};
 
-  // 2. Prepara o payload desta batida (só os campos novos)
+  // 2. Prepara payload desta batida (apenas os campos novos)
   const payload = {};
   payload[tipo] = hora;
   payload['dispositivo'] = di.device;
   payload['navegador'] = di.browser;
 
-  // 3. Atualiza local
+  // 3. Atualiza local IMEDIATAMENTE antes de qualquer operação async
   Object.assign(S.ponto[hoje][user], payload);
-  savePonto(); // salva local sem sync global
+  savePonto();
   renderPontoHoje();
   renderPontoHist();
 
-  // 4. Envia atomicamente para o Firebase no path do colaborador/data
-  //    PATCH = merge, nunca apaga outros colaboradores ou outras batidas do mesmo dia
-  const pontoPath = 'ponto/' + hoje + '/' + encodeURIComponent(user);
+  // 4. Envia atomicamente para Firebase usando chave segura
+  const pontoPath = 'ponto/' + hoje + '/' + userKey;
   showSync('⟳ Salvando ponto...', '');
   const ok = await fbPatch(pontoPath, payload);
   showSync(ok ? '✅ Ponto salvo' : '❌ Erro ao salvar ponto', ok ? 'ok' : 'error');
 
-  // 5. Atividade (fire-and-forget via save normal)
+  // 5. Atividade
   const L = {entrada:'Entrada', saida_almoco:'Saída Almoço', volta_almoco:'Volta Almoço', saida:'Saída'};
-  S.atividades.unshift({id:genId(),txt:'⏱ Ponto: '+L[tipo]+' às '+hora+' · '+di.device,hora:hora,data_registro:n.toLocaleDateString('pt-BR'),autor:user});
-  if(S.atividades.length>60)S.atividades.pop();
-  save(); // sync do restante dos dados
+  S.atividades.unshift({
+    id: genId(),
+    txt: '⏱ Ponto: ' + L[tipo] + ' às ' + hora + ' · ' + di.device,
+    hora: hora,
+    data_registro: n.toLocaleDateString('pt-BR'),
+    autor: user
+  });
+  if (S.atividades.length > 60) S.atividades.pop();
+  save();
 
-  // 6. Geolocalização: atualiza DEPOIS de forma independente, sem risco de apagar o ponto
+  // 6. Geolocalização: captura variáveis do escopo atual ANTES do async
+  //    Isso garante que a callback use os valores DESTE clique,
+  //    não de um clique posterior que possa ter sobrescrito as variáveis
+  const tipoPonto   = tipo;
+  const dataCaptura = hoje;
+  const horaCaptura = hora;
+  const userCaptura = user;
+  const userKeyCapt = userKey;
+
   getLocation(function(loc) {
     if (!loc) return;
+    // Verifica se o registro ainda existe
+    if (!S.ponto[dataCaptura] || !S.ponto[dataCaptura][userCaptura]) return;
+    // GUARD: só atualiza se a hora ainda bate com a desta batida.
+    // Se o usuário bateu outro ponto do mesmo tipo antes da geo retornar,
+    // descartamos esta localização para não sobrescrever a nova.
+    if (S.ponto[dataCaptura][userCaptura][tipoPonto] !== horaCaptura) return;
+
     const locPayload = {};
-    locPayload['loc_' + tipo] = loc;
-    // Só define 'localizacao' na primeira batida (entrada) ou se ainda não tiver
-    if (tipo === 'entrada' || !S.ponto[hoje][user].localizacao) {
+    locPayload['loc_' + tipoPonto] = loc;
+    // Campo 'localizacao' (principal) apenas na entrada
+    if (tipoPonto === 'entrada') {
       locPayload['localizacao'] = loc;
     }
-    Object.assign(S.ponto[hoje][user], locPayload);
+
+    Object.assign(S.ponto[dataCaptura][userCaptura], locPayload);
     savePonto();
     renderPontoHist();
-    // Envia localização via PATCH separado (não interfere no ponto já salvo)
-    fbPatch(pontoPath, locPayload);
+    // PATCH separado — não interfere na batida já salva
+    fbPatch('ponto/' + dataCaptura + '/' + userKeyCapt, locPayload);
   });
 }
 
@@ -1271,6 +1322,9 @@ function renderPontoHist(){
       const locHtml = p.localizacao
         ? `<span class="ponto-loc-badge" title="${p.localizacao}">📍 ${p.localizacao.length>30?p.localizacao.substring(0,30)+'...':p.localizacao}</span>`
         : '<span style="color:var(--muted);font-size:11px;">—</span>';
+      const editBtn = isAdmin()
+        ? `<button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="abrirEditarPonto('${data}','${user.replace(/'/g,"\\'")}')">✏ Editar</button>`
+        : '';
       rows.push(`<tr>
         <td data-label="Colaborador">${user}</td>
         <td data-label="Data">${new Date(data+'T12:00:00').toLocaleDateString('pt-BR')}</td>
@@ -1281,10 +1335,90 @@ function renderPontoHist(){
         <td data-label="Total"><strong>${calcHoras(p)}</strong></td>
         <td data-label="Dispositivo">${devHtml}</td>
         <td data-label="Localização">${locHtml}</td>
+        ${isAdmin()?`<td data-label="">${editBtn}</td>`:''}
       </tr>`);
     });
   });
   document.getElementById('tbody-ponto').innerHTML=rows.length?rows.join(''):'<tr><td colspan="9" class="empty-state">Sem registros</td></tr>';
+}
+
+// ═══════════ EDIÇÃO DE PONTO (admin) ═══════════
+let _editPonto = null; // { data, user }
+
+function abrirEditarPonto(data, user) {
+  if (!isAdmin()) return;
+  const p = (S.ponto[data] && S.ponto[data][user]) || {};
+  _editPonto = { data, user };
+
+  const dataFmt = new Date(data + 'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'});
+  document.getElementById('mep-info').innerHTML =
+    `<strong style="color:var(--gold);">${user}</strong><br>📅 ${dataFmt}`;
+
+  // Preenche campos (input type="time" aceita HH:MM)
+  document.getElementById('mep-entrada').value      = p.entrada      || '';
+  document.getElementById('mep-saida-almoco').value = p.saida_almoco || '';
+  document.getElementById('mep-volta-almoco').value = p.volta_almoco || '';
+  document.getElementById('mep-saida').value        = p.saida        || '';
+
+  openM('m-editar-ponto');
+}
+
+async function salvarEdicaoPonto() {
+  if (!_editPonto) return;
+  const { data, user } = _editPonto;
+
+  const entrada      = document.getElementById('mep-entrada').value.trim();
+  const saida_almoco = document.getElementById('mep-saida-almoco').value.trim();
+  const volta_almoco = document.getElementById('mep-volta-almoco').value.trim();
+  const saida        = document.getElementById('mep-saida').value.trim();
+
+  // Garante estrutura local
+  if (!S.ponto[data]) S.ponto[data] = {};
+  if (!S.ponto[data][user]) S.ponto[data][user] = {};
+
+  const p = S.ponto[data][user];
+
+  // Atualiza apenas os campos preenchidos; campo vazio = apaga o horário
+  if (entrada)      p.entrada      = entrada;      else delete p.entrada;
+  if (saida_almoco) p.saida_almoco = saida_almoco; else delete p.saida_almoco;
+  if (volta_almoco) p.volta_almoco = volta_almoco; else delete p.volta_almoco;
+  if (saida)        p.saida        = saida;        else delete p.saida;
+
+  // Marca como editado manualmente
+  p.editadoPor = eu();
+  p.editadoEm  = new Date().toLocaleString('pt-BR');
+
+  savePonto();
+  renderPontoHoje();
+  renderPontoHist();
+
+  // Sincroniza com Firebase via PATCH no path do colaborador
+  const userKey   = fbKey(user);
+  const pontoPath = 'ponto/' + data + '/' + userKey;
+
+  // Monta payload completo do registro (não apenas o diff) para garantir consistência
+  const payload = {};
+  if (p.entrada)      payload.entrada      = p.entrada;
+  if (p.saida_almoco) payload.saida_almoco = p.saida_almoco;
+  if (p.volta_almoco) payload.volta_almoco = p.volta_almoco;
+  if (p.saida)        payload.saida        = p.saida;
+  payload.editadoPor = p.editadoPor;
+  payload.editadoEm  = p.editadoEm;
+
+  // Para campos apagados, envia null para o Firebase remover o campo
+  if (!p.entrada)      payload.entrada      = null;
+  if (!p.saida_almoco) payload.saida_almoco = null;
+  if (!p.volta_almoco) payload.volta_almoco = null;
+  if (!p.saida)        payload.saida        = null;
+
+  showSync('⟳ Salvando edição...', '');
+  const ok = await fbPatch(pontoPath, payload);
+  showSync(ok ? '✅ Ponto atualizado' : '❌ Erro ao salvar', ok ? 'ok' : 'error');
+
+  addAtiv(`✏️ Ponto editado: ${user} — ${new Date(data+'T12:00:00').toLocaleDateString('pt-BR')}`);
+
+  _editPonto = null;
+  closeM('m-editar-ponto');
 }
 
 // ═══════════ TAREFAS ═══════════
