@@ -424,7 +424,14 @@ img, video, iframe { max-width: 100%; }
           <option value="urgente">Urgente</option><option value="alta">Alta</option><option value="normal">Normal</option><option value="baixa">Baixa</option>
         </select>
         <input class="search-input" id="fil-busca" placeholder="Buscar..." oninput="renderKanban()" style="width:180px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap;">
+          <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;">📅 Dia</label>
+          <input type="date" class="search-input" id="fil-data" style="width:160px;" onchange="renderKanban()">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fil-data').value=new Date().toISOString().slice(0,10);renderKanban();">Hoje</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fil-data').value='';renderKanban();">Limpar</button>
+        </div>
       </div>
+      <div id="fil-data-aviso" style="display:none;font-size:12px;color:var(--gold);margin:-6px 0 14px;"></div>
       <div class="kanban" id="kanban-board"></div>
     </section>
 
@@ -1386,7 +1393,7 @@ function renderDash() {
 
   document.getElementById('st-rec').textContent=rec>0?'R$'+(rec>=1000?(rec/1000).toFixed(1)+'k':rec.toFixed(0)):'R$0';
   document.getElementById('st-tar-pen').textContent=minhasT().filter(t=>t.status!=='concluido').length;
-  document.getElementById('st-tar-con').textContent=minhasT().filter(t=>t.status==='concluido'&&(t.criadoEm||'').startsWith(mes)).length;
+ document.getElementById('st-tar-con').textContent=minhasT().filter(t=>t.status==='concluido'&&((t.concluidoEm||t.criadoEm||'').startsWith(mes))).length;
   document.getElementById('st-contratos').textContent=minhasV().filter(v=>v.status==='fechado'&&(v.data||v.data_venda||'').startsWith(mes)).length;
   document.getElementById('badge-tarefas').textContent=minhasT().filter(t=>t.status!=='concluido').length;
 
@@ -1422,69 +1429,59 @@ async function baterPonto(tipo) {
   const userKey = fbKey(user);
   const di = getDeviceInfo();
 
-  // 1. Garante estrutura local
+  // Busca o registro mais recente do Firebase ANTES de gravar (evita duplicar/sobrescrever)
+  let atual = {};
+  try {
+    const remoto = await fbGet('ponto/' + hoje + '/' + userKey);
+    if (remoto && typeof remoto === 'object') atual = remoto;
+  } catch(e) {}
+
+  if (S.ponto[hoje] && S.ponto[hoje][user]) {
+    Object.keys(S.ponto[hoje][user]).forEach(function(k){
+      if (atual[k] == null) atual[k] = S.ponto[hoje][user][k];
+    });
+  }
+
+  // Se já existe essa batida, confirma antes de substituir
+  if (atual[tipo]) {
+    const L0 = {entrada:'Entrada', saida_almoco:'Saída Almoço', volta_almoco:'Volta Almoço', saida:'Saída'};
+    if (!confirm('Você já registrou "' + (L0[tipo]||tipo) + '" às ' + atual[tipo] + '.\n\nSubstituir pelo horário atual (' + hora + ')?')) return;
+  }
+
+  atual[tipo] = hora;
+  atual.dispositivo = di.device;
+  atual.navegador = di.browser;
+
   if (!S.ponto[hoje]) S.ponto[hoje] = {};
-  if (!S.ponto[hoje][user]) S.ponto[hoje][user] = {};
-
-  // 2. Prepara payload desta batida (apenas os campos novos)
-  const payload = {};
-  payload[tipo] = hora;
-  payload['dispositivo'] = di.device;
-  payload['navegador'] = di.browser;
-
-  // 3. Atualiza local IMEDIATAMENTE antes de qualquer operação async
-  Object.assign(S.ponto[hoje][user], payload);
+  S.ponto[hoje][user] = atual;
   savePonto();
   renderPontoHoje();
   renderPontoHist();
 
-  // 4. Envia atomicamente para Firebase usando chave segura
-  const pontoPath = 'ponto/' + hoje + '/' + userKey;
+  const payload = {};
+  payload[tipo] = hora;
+  payload.dispositivo = di.device;
+  payload.navegador = di.browser;
   showSync('⟳ Salvando ponto...', '');
-  const ok = await fbPatch(pontoPath, payload);
+  const ok = await fbPatch('ponto/' + hoje + '/' + userKey, payload);
   showSync(ok ? '✅ Ponto salvo' : '❌ Erro ao salvar ponto', ok ? 'ok' : 'error');
 
-  // 5. Atividade
   const L = {entrada:'Entrada', saida_almoco:'Saída Almoço', volta_almoco:'Volta Almoço', saida:'Saída'};
-  S.atividades.unshift({
-    id: genId(),
-    txt: '⏱ Ponto: ' + L[tipo] + ' às ' + hora + ' · ' + di.device,
-    hora: hora,
-    data_registro: n.toLocaleDateString('pt-BR'),
-    autor: user
-  });
+  S.atividades.unshift({ id: genId(), txt: '⏱ Ponto: ' + L[tipo] + ' às ' + hora + ' · ' + di.device, hora: hora, data_registro: n.toLocaleDateString('pt-BR'), autor: user });
   if (S.atividades.length > 60) S.atividades.pop();
   save();
 
-  // 6. Geolocalização: captura variáveis do escopo atual ANTES do async
-  //    Isso garante que a callback use os valores DESTE clique,
-  //    não de um clique posterior que possa ter sobrescrito as variáveis
-  const tipoPonto   = tipo;
-  const dataCaptura = hoje;
-  const horaCaptura = hora;
-  const userCaptura = user;
-  const userKeyCapt = userKey;
-
+  const tipoPonto = tipo, dataCaptura = hoje, horaCaptura = hora, userCaptura = user, userKeyCapt = userKey;
   getLocation(function(loc) {
     if (!loc) return;
-    // Verifica se o registro ainda existe
     if (!S.ponto[dataCaptura] || !S.ponto[dataCaptura][userCaptura]) return;
-    // GUARD: só atualiza se a hora ainda bate com a desta batida.
-    // Se o usuário bateu outro ponto do mesmo tipo antes da geo retornar,
-    // descartamos esta localização para não sobrescrever a nova.
     if (S.ponto[dataCaptura][userCaptura][tipoPonto] !== horaCaptura) return;
-
     const locPayload = {};
     locPayload['loc_' + tipoPonto] = loc;
-    // Campo 'localizacao' (principal) apenas na entrada
-    if (tipoPonto === 'entrada') {
-      locPayload['localizacao'] = loc;
-    }
-
+    if (tipoPonto === 'entrada') locPayload['localizacao'] = loc;
     Object.assign(S.ponto[dataCaptura][userCaptura], locPayload);
     savePonto();
     renderPontoHist();
-    // PATCH separado — não interfere na batida já salva
     fbPatch('ponto/' + dataCaptura + '/' + userKeyCapt, locPayload);
   });
 }
@@ -2040,15 +2037,31 @@ function renderKanban(){
   const fr=document.getElementById('fil-resp')?.value||'';
   const fp=document.getElementById('fil-prior')?.value||'';
   const fb=(document.getElementById('fil-busca')?.value||'').toLowerCase();
+  const fd=document.getElementById('fil-data')?.value||'';
+
+  const aviso=document.getElementById('fil-data-aviso');
+  if(aviso){
+    if(fd){
+      const dlbl=new Date(fd+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+      aviso.style.display='block';
+      aviso.innerHTML='📅 Mostrando tarefas <strong>criadas</strong> e <strong>concluídas</strong> em '+dlbl+'.';
+    } else { aviso.style.display='none'; }
+  }
+
   const COLS=[{k:'aberto',l:'Em Aberto',c:'#C9A84C'},{k:'andamento',l:'Em Andamento',c:'#4C7EC9'},{k:'concluido',l:'Concluído',c:'#4CAF7D'}];
   function ini(nome){if(!nome)return'?';const p=nome.replace('Dra. ','').replace('Dr. ','').split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
   function acor(nome){const cs=['#C9A84C','#4C7EC9','#4CAF7D','#C94C9A','#9A4CC9','#C94C4C'];let h=0;for(const c of(nome||''))h=(h*31+c.charCodeAt(0))%cs.length;return cs[h];}
+  const fmtDia=iso=>iso?new Date(iso.slice(0,10)+'T12:00:00').toLocaleDateString('pt-BR'):'';
   const hoje=new Date().toISOString().slice(0,10);
   document.getElementById('kanban-board').innerHTML=COLS.map(col=>{
     let tasks=minhasT().filter(t=>t.status===col.k);
     if(fr)tasks=tasks.filter(t=>t.responsavel===fr);
     if(fp)tasks=tasks.filter(t=>t.prioridade===fp);
     if(fb)tasks=tasks.filter(t=>t.titulo.toLowerCase().includes(fb));
+    if(fd){
+      if(col.k==='concluido'){ tasks=tasks.filter(t=>(t.concluidoEm||'').slice(0,10)===fd); }
+      else { tasks=tasks.filter(t=>(t.criadoEm||'').slice(0,10)===fd); }
+    }
     return`<div class="kanban-col">
       <div class="kanban-col-header" style="color:${col.c}"><span>${col.l}</span><span class="badge" style="background:${col.c}">${tasks.length}</span></div>
       <div class="kanban-col-body">
@@ -2056,12 +2069,15 @@ function renderKanban(){
           const venc=col.k!=='concluido'&&t.prazo&&t.prazo<hoje;
           const vhj=col.k!=='concluido'&&t.prazo&&t.prazo===hoje;
           const nc=(t.comentarios||[]).length;
+          const criadaTxt=t.criadoEm?`<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">🆕 Criada em ${fmtDia(t.criadoEm)}</div>`:'';
+          const conclTxt=(col.k==='concluido'&&t.concluidoEm)?`<div style="font-size:10px;color:var(--green);margin-bottom:6px;">✅ Concluída em ${fmtDia(t.concluidoEm)}</div>`:'';
           return`<div class="task-card" style="${venc?'border-color:rgba(201,76,76,.5);':vhj?'border-color:rgba(201,168,76,.6);':''}" onclick="abrirDetalhe(${t.id})">
             <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:4px;">
               <div style="font-size:13px;font-weight:500;">${t.titulo}</div>
               ${nc?`<span style="font-size:10px;color:var(--muted);white-space:nowrap;">💬${nc}</span>`:''}
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">${t.area||''}${t.prazo?` · <span style="color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'}">${new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR')}${venc?' ⚠️':vhj?' (hoje)':''}</span>`:''}</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">${t.area||''}${t.prazo?` · <span style="color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'}">${new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR')}${venc?' ⚠️':vhj?' (hoje)':''}</span>`:''}</div>
+            ${criadaTxt}${conclTxt}
             ${t.responsavel?`<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;"><div style="width:24px;height:24px;border-radius:50%;background:${acor(t.responsavel)};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#000;">${ini(t.responsavel)}</div><span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">${t.responsavel}</span></div>`:'<div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic;">Sem responsável</div>'}
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <span class="tag ${PRIOR_TAG[t.prioridade]||'tag-muted'}">${t.prioridade||'normal'}</span>
@@ -2081,7 +2097,7 @@ function renderKanban(){
   }).join('');
 }
 
-function moverT(id,status){const t=S.tarefas.find(x=>x.id===id);if(t){t.status=status;save();renderKanban();renderDash();}}
+function moverT(id,status){const t=S.tarefas.find(x=>x.id===id);if(t){t.status=status;if(status==='concluido'){t.concluidoEm=new Date().toISOString();}else{t.concluidoEm=null;}save();renderKanban();renderDash();}}
 function delT(id){S.tarefas=S.tarefas.filter(x=>x.id!==id);save();renderKanban();renderDash();}
 
 function salvarTarefa(){
@@ -2707,7 +2723,7 @@ function metDia(nome,data){
   const a=S.atendimentos.filter(x=>(x.data===data||x.data_atend===data)&&x.responsavel===nome).length;
   const v=S.vendas.filter(x=>(x.data===data||x.data_venda===data)&&(x.criadoPor===nome||x.responsavel===nome)&&x.status==='fechado');
   const tc=S.tarefas.filter(x=>x.criadoPor===nome&&x.criadoEm&&x.criadoEm.startsWith(data)).length;
-  const tk=S.tarefas.filter(x=>x.status==='concluido'&&x.prazo===data&&x.responsavel===nome).length;
+  const tk=S.tarefas.filter(x=>x.status==='concluido'&&(x.concluidoEm||'').slice(0,10)===data&&x.responsavel===nome).length;
   const recTotal=v.reduce((s,x)=>s+(parseFloat(x.valor)||0),0);
   return{entrada:p.entrada||'--',saida:p.saida||'--',horas:calcHoras(p),atend:a,vend:v.length,rec:recTotal,tCri:tc,tCon:tk};
 }
