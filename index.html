@@ -528,6 +528,7 @@ img, video, iframe { max-width: 100%; }
             </div>
             <button class="btn btn-gold" onclick="finVerMes()">Gerar</button>
             <button class="btn btn-ghost" id="fin-btn-geral" onclick="finVerGeral()" style="margin-left:auto;">📊 Ver Geral</button>
+            <button class="btn btn-ghost" id="fin-btn-fix" onclick="corrigirReparcelamentosAntigos()" style="display:none;" title="Inativa os contratos antigos de todos os clientes que já têm reparcelamento (não marca nada como pago)">🔧 Corrigir reparcelamentos</button>
           </div>
         </div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold);margin-bottom:16px;" id="fin-title"></div>
@@ -2860,6 +2861,35 @@ function initFinanceiro() {
   mostrarFinanceiro();
 }
 
+// Inativa os contratos antigos de todos os clientes que têm reparcelamento (sem marcar nada como pago)
+function corrigirReparcelamentosAntigos(){
+  const ehRep = ct => (ct.tipo==='reparcelamento') || /reparcel/i.test((ct.desc||ct.descricao||''));
+  const ordem = ct => ct.criadoEm ? new Date(ct.criadoEm).getTime() : 0;
+  // Levanta o que seria alterado
+  const alvos=[];
+  S.clientes.forEach(cli=>{
+    const cts=cli.contratos||[];
+    const reps=cts.filter(ehRep);
+    if(!reps.length) return;
+    cts.forEach((ct,idx)=>{
+      if(ct.ativo===false) return; // já inativo
+      const superado = reps.some(r=>{
+        if(r===ct) return false;
+        return ordem(r) > ordem(ct) || (ordem(r)===ordem(ct) && cts.indexOf(r) > idx);
+      });
+      if(superado) alvos.push({cli,ct});
+    });
+  });
+  if(!alvos.length){ alert('✅ Nenhum contrato antigo para inativar. Tudo já está em ordem.'); return; }
+  const resumo = alvos.slice(0,15).map(a=>`• ${a.cli.nome}: ${a.ct.desc||a.ct.descricao}`).join('\n') + (alvos.length>15?`\n...e mais ${alvos.length-15}.`:'');
+  if(!confirm(`Serão INATIVADOS ${alvos.length} contrato(s) antigo(s) de clientes que já têm reparcelamento:\n\n${resumo}\n\n⚠️ Nenhuma parcela será marcada como paga. Deseja continuar?`)) return;
+  alvos.forEach(a=>{ a.ct.ativo=false; });
+  save();
+  renderFinanceiro();
+  renderDash();
+  alert(`✅ Pronto! ${alvos.length} contrato(s) antigo(s) foram inativados. Os valores em "A Receber" e "Em Atraso" já foram recalculados.`);
+}
+
 function mostrarFinanceiro() {
   const el = document.getElementById('fin-mes');
   if(el && !el.value) el.value = new Date().toISOString().slice(0,7);
@@ -2874,6 +2904,7 @@ function renderFinanceiro() {
     : '💳 Financeiro — ' + mesLabel.charAt(0).toUpperCase()+mesLabel.slice(1);
   const btnGeral = document.getElementById('fin-btn-geral');
   if(btnGeral){ btnGeral.className = 'btn ' + (finGeral?'btn-gold':'btn-ghost'); btnGeral.style.marginLeft='auto'; btnGeral.textContent = finGeral?'📊 Vendo Geral':'📊 Ver Geral'; }
+  const btnFix = document.getElementById('fin-btn-fix'); if(btnFix) btnFix.style.display = isAdmin()?'':'none';
   const tR=document.getElementById('fin-title-receber'); if(tR) tR.textContent = finGeral?'⏳ A Receber (Geral)':'⏳ A Receber no Mês';
   const tA=document.getElementById('fin-title-atraso'); if(tA) tA.textContent = finGeral?'⚠️ Parcelas em Atraso (Total — todos os meses)':'⚠️ Parcelas em Atraso no Mês';
   // A tabela "Recebido no Mês" só aparece no modo Mês
