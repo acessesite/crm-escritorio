@@ -1101,6 +1101,14 @@ img, video, iframe { max-width: 100%; }
       </div>
       </div>
       <div id="mf-ct-lista"></div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-header"><div class="card-title" style="font-size:14px;">💬 Comentários do Financeiro</div></div>
+        <div style="padding:14px;">
+          <textarea id="mf-fin-coment-texto" placeholder="Ex: Cliente pediu para adiar a parcela de agosto. Combinado pagar 2x em setembro." style="width:100%;min-height:70px;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:vertical;"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px;"><button class="btn btn-gold btn-sm" onclick="mfAddComentarioFin()">+ Adicionar comentário</button></div>
+          <div id="mf-fin-coment-lista" style="display:flex;flex-direction:column;gap:8px;margin-top:12px;"></div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -2874,10 +2882,50 @@ function mfRenderFin(){
     }).join('') || `<tr><td colspan="6" style="padding:14px;text-align:center;font-size:12px;color:var(--muted);">Nenhuma parcela registrada ainda. Clique em <strong style="color:var(--gold)">➕ Registrar parcela</strong> conforme o cliente for pagando.</td></tr>`;
     return`<div class="card" style="${cardStyle}"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao} ${badges}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div>${origemNota}${travadoNota}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${acoesAtivo}${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> · Saldo a receber: <strong style="color:var(--gold)">R$ ${saldoReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join(''):'<div class="empty-state"><span class="icon">💰</span>Nenhum contrato.</div>';
+  mfRenderComentariosFin();
 }
 
-// ═══════════ ADICIONAR PARCELA A CONTRATO EXISTENTE ═══════════
-let _addParcelaCt=null;
+// ═══════════ COMENTÁRIOS DO FINANCEIRO ═══════════
+function mfRenderComentariosFin(){
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const el=document.getElementById('mf-fin-coment-lista'); if(!el) return;
+  const lista=c.comentariosFin||[];
+  el.innerHTML = lista.length ? lista.map(cm=>{
+    const dt=cm.em?new Date(cm.em):null;
+    const quando=dt?dt.toLocaleDateString('pt-BR')+' às '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'';
+    const podeApagar = isAdmin() || cm.autor===eu();
+    return `<div style="background:var(--dark-4);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="font-size:12px;"><span style="color:var(--gold);font-weight:600;">${cm.autor||'—'}</span> <span style="color:var(--muted);">· ${quando}</span></div>
+        ${podeApagar?`<button class="btn btn-danger btn-sm" onclick="mfDelComentarioFin(${cm.id})" title="Remover comentário">🗑</button>`:''}
+      </div>
+      <div style="font-size:13px;white-space:pre-wrap;line-height:1.5;">${(cm.texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--muted);padding:4px 0;">Nenhum comentário ainda.</div>';
+}
+function mfAddComentarioFin(){
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const ta=document.getElementById('mf-fin-coment-texto');
+  const texto=(ta.value||'').trim();
+  if(!texto){ alert('⚠️ Escreva o comentário.'); return; }
+  if(!c.comentariosFin) c.comentariosFin=[];
+  c.comentariosFin.unshift({id:genId(), texto, autor:eu(), em:new Date().toISOString()});
+  ta.value='';
+  _touch(c);
+  save();
+  addAtiv('💬 Comentário financeiro: '+c.nome+' — '+texto.slice(0,40));
+  mfRenderComentariosFin();
+}
+function mfDelComentarioFin(id){
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const cm=(c.comentariosFin||[]).find(x=>x.id===id); if(!cm) return;
+  if(!(isAdmin()||cm.autor===eu())){ alert('Só quem escreveu (ou um administrador) pode apagar.'); return; }
+  if(!confirm('Remover este comentário?')) return;
+  c.comentariosFin=c.comentariosFin.filter(x=>x.id!==id);
+  _touch(c);
+  save();
+  mfRenderComentariosFin();
+}
 function _diasNoMes(y,m){ return new Date(y,m+1,0).getDate(); }
 function _proxVencContrato(ct){
   const dia=parseInt(ct&&ct.diaVenc); if(isNaN(dia)) return '';
