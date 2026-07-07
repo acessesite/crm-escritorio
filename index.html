@@ -631,6 +631,11 @@ img, video, iframe { max-width: 100%; }
     </div>
     <div style="margin-bottom:20px;">
       <div id="mdp-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>💵 Valor efetivamente recebido R$ *</label>
+        <input type="number" step="0.01" id="mdp-valor" style="font-size:15px;padding:12px 14px;">
+        <div style="font-size:11px;color:var(--gold);margin-top:4px;">Cliente pagou menos por acordo? Ajuste o valor aqui.</div>
+      </div>
       <div class="form-group">
         <label>📅 Data em que o pagamento foi recebido *</label>
         <input type="date" id="mdp-data" style="font-size:15px;padding:12px 14px;">
@@ -653,6 +658,11 @@ img, video, iframe { max-width: 100%; }
     </div>
     <div style="margin-bottom:20px;">
       <div id="medp-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>💵 Valor efetivamente recebido R$ *</label>
+        <input type="number" step="0.01" id="medp-valor" style="font-size:15px;padding:12px 14px;">
+        <div style="font-size:11px;color:var(--gold);margin-top:4px;">Corrija também o valor recebido se necessário.</div>
+      </div>
       <div class="form-group">
         <label>📅 Data real em que o pagamento foi recebido *</label>
         <input type="date" id="medp-data" style="font-size:15px;padding:12px 14px;">
@@ -662,6 +672,72 @@ img, video, iframe { max-width: 100%; }
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeM('m-editar-datapag')">Cancelar</button>
       <button class="btn btn-gold" onclick="salvarEdicaoDataPag()">✅ Salvar Correção</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR PARCELA -->
+<div class="modal-overlay" id="m-add-parcela">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">➕ Adicionar Parcela</div>
+      <button class="modal-close" onclick="closeM('m-add-parcela')">✕</button>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div id="map-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>💵 Valor da parcela R$ *</label>
+        <input type="number" step="0.01" id="map-valor" placeholder="500.00" style="font-size:15px;padding:12px 14px;">
+      </div>
+      <div class="form-group">
+        <label>📅 Vencimento</label>
+        <input type="date" id="map-venc" style="font-size:15px;padding:12px 14px;">
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">A nova parcela será somada ao total do contrato e a quantidade de parcelas será atualizada automaticamente.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-add-parcela')">Cancelar</button>
+      <button class="btn btn-gold" onclick="confirmAddParcela()">➕ Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPARCELAMENTO -->
+<div class="modal-overlay" id="m-reparcelamento">
+  <div class="modal" style="width:520px;">
+    <div class="modal-header">
+      <div class="modal-title">🔄 Novo Reparcelamento</div>
+      <button class="modal-close" onclick="closeM('m-reparcelamento')">✕</button>
+    </div>
+    <div style="margin-bottom:20px;">
+      <div id="mrep-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group" style="grid-column:1 / -1;">
+          <label>Descrição do acordo *</label>
+          <input type="text" id="mrep-desc" placeholder="Ex: Acordo — pagamento menor" style="padding:11px 13px;">
+        </div>
+        <div class="form-group">
+          <label>Novo valor total R$ *</label>
+          <input type="number" step="0.01" id="mrep-total" placeholder="1500.00" style="padding:11px 13px;">
+        </div>
+        <div class="form-group">
+          <label>Nº de parcelas *</label>
+          <input type="number" min="1" id="mrep-parc" placeholder="3" style="padding:11px 13px;">
+        </div>
+        <div class="form-group">
+          <label>Valor por parcela R$</label>
+          <input type="number" step="0.01" id="mrep-vparc" placeholder="Deixe vazio p/ dividir" style="padding:11px 13px;">
+        </div>
+        <div class="form-group">
+          <label>Vencimento da 1ª parcela</label>
+          <input type="date" id="mrep-inicio" style="padding:11px 13px;">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--gold);margin-top:12px;line-height:1.6;">⚠️ Ao confirmar, o contrato atual ficará <strong>INATIVO</strong> automaticamente e este reparcelamento passará a ser o acordo vigente. Os valores já recebidos são preservados no histórico.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-reparcelamento')">Cancelar</button>
+      <button class="btn btn-gold" onclick="mfCriarReparcelamento()">🔄 Criar Reparcelamento</button>
     </div>
   </div>
 </div>
@@ -1384,7 +1460,7 @@ function renderDash() {
       const dp=p.dataPag||p.data_pagamento||'';
       if(dp){
         const pts=dp.split('/');
-        if(pts.length===3 && pts[2]+'-'+pts[1]===mes) recParcelasD+=parseFloat(p.valor)||0;
+        if(pts.length===3 && pts[2]+"-"+pts[1]===mes) recParcelasD+=vRec(p);
       }
     }
   });});});
@@ -2337,6 +2413,14 @@ function mfDelAcomp(id){
   save();mfRenderAcomp();
 }
 
+// Valor realmente recebido numa parcela (usa valorPago se existir, senão o valor da parcela)
+function vRec(p){
+  const v=(p.valorPago!==undefined&&p.valorPago!==null&&p.valorPago!=='')?p.valorPago:p.valor;
+  return parseFloat(v)||0;
+}
+// Contrato é considerado ativo a não ser que tenha sido explicitamente inativado
+function ctAtivo(ct){ return ct.ativo!==false; }
+
 function mfAddContrato(){
   const desc=document.getElementById('mf-ct-desc').value.trim();
   const total=parseFloat(document.getElementById('mf-ct-total').value);
@@ -2352,7 +2436,7 @@ function mfAddContrato(){
     if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}
     return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};
   });
-  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,criadoEm:new Date().toISOString(),criadoPor:eu()});
+  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo:'contrato',origemId:null,criadoEm:new Date().toISOString(),criadoPor:eu()});
   save();
   ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value='');
   addAtiv('💰 Contrato: '+c.nome+' — '+desc);
@@ -2387,6 +2471,7 @@ function mfMarcarParcela(ctId, pNum, pago) {
     `Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`;
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('mdp-data').value = venctoISO || hoje;
+  document.getElementById('mdp-valor').value = parseFloat(p.valor)||0;
   openM('m-data-pagamento');
 }
 
@@ -2400,8 +2485,11 @@ function confirmarPagamento() {
   if (!ct) return;
   const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
   if (!p) return;
+  const valRec = parseFloat(document.getElementById('mdp-valor').value);
+  if (isNaN(valRec) || valRec < 0) { alert('⚠️ Informe o valor recebido.'); return; }
   const [ano, mes2, dia] = dataISO.split('-');
   p.pago = true;
+  p.valorPago = valRec;
   p.dataPag = dia + '/' + mes2 + '/' + ano;
   p.data_pagamento = p.dataPag;
   _pagPendente = null;
@@ -2414,17 +2502,125 @@ function confirmarPagamento() {
 function mfRenderFin(){
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   const cts=c.contratos||[];
-  const rec=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0);
-  const pen=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>!p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0);
+  // Recebido: soma o que foi realmente recebido em TODOS os contratos (ativos e inativos)
+  const rec=cts.reduce((s,ct)=>s+ct.parcelas.filter(p=>p.pago).reduce((ss,p)=>ss+vRec(p),0),0);
+  // Pendente: apenas parcelas não pagas de contratos ATIVOS (os inativos foram reparcelados)
+  const pen=cts.filter(ctAtivo).reduce((s,ct)=>s+ct.parcelas.filter(p=>!p.pago).reduce((ss,p)=>ss+(parseFloat(p.valor)||0),0),0);
+  const nAtivos=cts.filter(ctAtivo).length;
   document.getElementById('mf-novo-contrato-wrap').style.display='block';
-  document.getElementById('mf-fin-resumo').innerHTML=cts.length?`<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;"><div class="stat-card" style="padding:14px;"><div class="stat-label">Contratos</div><div class="stat-val" style="font-size:26px;">${cts.length}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Recebido</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Pendente</div><div class="stat-val" style="font-size:20px;color:var(--gold);">R$ ${pen.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>`:'';
+  document.getElementById('mf-fin-resumo').innerHTML=cts.length?`<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;"><div class="stat-card" style="padding:14px;"><div class="stat-label">Contratos ativos</div><div class="stat-val" style="font-size:26px;">${nAtivos}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Recebido</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Pendente</div><div class="stat-val" style="font-size:20px;color:var(--gold);">R$ ${pen.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>`:'';
   const hoje=new Date().toISOString().slice(0,10);
   document.getElementById('mf-ct-lista').innerHTML=cts.length?cts.map(ct=>{
-    const r=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+    const ativo=ctAtivo(ct);
+    const isRep=ct.tipo==='reparcelamento';
+    const origem=ct.origemId?cts.find(x=>x.id===ct.origemId):null;
+    const r=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+vRec(p),0);
     const tot=parseFloat(ct.total||ct.valor_total||0);
     const pct=tot>0?Math.round((r/tot)*100):0;
-    return`<div class="card"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div></div><div style="display:flex;align-items:center;gap:10px;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${ct.parcelas.map(p=>{const venc=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)<hoje;const vhj=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)===hoje;const vd=p.vencimento||p.vencto;const pn=p.num||p.numero;return`<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;font-size:13px;">Parcela ${pn}</td><td style="padding:8px;font-size:13px;font-weight:600;color:var(--gold);">R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td style="padding:8px;font-size:12px;color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'};">${vd?new Date(vd+'T12:00:00').toLocaleDateString('pt-BR'):'—'}${venc?' ⚠️':vhj?' (hoje)':''}</td><td style="padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;">${p.dataPag||p.data_pagamento||'—'}${p.pago?` <button onclick="editarDataPag(${ct.id},${pn})" title="Corrigir data" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gold);padding:0 2px;">✏️</button>`:''}</td><td style="padding:8px;"><span class="tag ${p.pago?'tag-green':'tag-muted'}">${p.pago?'✅ Pago':'Pendente'}</span></td><td style="padding:8px;"><button class="btn btn-sm ${p.pago?'btn-ghost':'btn-gold'}" onclick="mfMarcarParcela(${ct.id},${pn},${!p.pago})">${p.pago?'Desfazer':'Marcar pago'}</button></td></tr>`;}).join('')}</tbody></table></div></div>`;
+    // Tags de status no cabeçalho
+    let badges='';
+    if(isRep) badges+=`<span class="tag" style="background:rgba(201,168,76,.18);color:var(--gold);border:1px solid var(--border-s);">🔄 Reparcelamento</span>`;
+    if(!ativo) badges+=`<span class="tag tag-red" style="margin-left:6px;">⛔ Inativo</span>`;
+    else badges+=`<span class="tag tag-green" style="margin-left:6px;">● Ativo</span>`;
+    // Botões de ação do contrato (só para contratos ativos)
+    const acoesAtivo=ativo?`<button class="btn btn-ghost btn-sm" onclick="mfAddParcela(${ct.id})">➕ Parcela</button><button class="btn btn-gold btn-sm" onclick="mfAbrirReparcelamento(${ct.id})">🔄 Reparcelar</button>`:'';
+    const cardStyle=ativo?'':'opacity:.7;border-color:var(--red);';
+    const origemNota=isRep&&origem?`<div style="font-size:11px;color:var(--gold);margin-top:2px;">🔄 Reparcelamento de: <strong>${origem.desc||origem.descricao}</strong></div>`:'';
+    const rows=ct.parcelas.map(p=>{
+      const venc=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)<hoje;
+      const vhj=!p.pago&&(p.vencimento||p.vencto)&&(p.vencimento||p.vencto)===hoje;
+      const vd=p.vencimento||p.vencto;
+      const pn=p.num||p.numero;
+      const recibo=vRec(p);
+      const difere=p.pago&&Math.abs(recibo-(parseFloat(p.valor)||0))>0.001;
+      const colValor=`R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}${difere?`<div style="font-size:10px;color:var(--green);font-weight:500;">recebido R$ ${recibo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`:''}`;
+      // Ação na parcela: contratos inativos não recebem novos pagamentos, mas paga continua editável
+      let acao;
+      if(p.pago){ acao=`<button class="btn btn-sm btn-ghost" onclick="mfMarcarParcela(${ct.id},${pn},false)">Desfazer</button>`; }
+      else if(ativo){ acao=`<button class="btn btn-sm btn-gold" onclick="mfMarcarParcela(${ct.id},${pn},true)">Marcar pago</button>`; }
+      else { acao=`<span style="font-size:11px;color:var(--muted);">—</span>`; }
+      return`<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;font-size:13px;">Parcela ${pn}</td><td style="padding:8px;font-size:13px;font-weight:600;color:var(--gold);">${colValor}</td><td style="padding:8px;font-size:12px;color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'};">${vd?new Date(vd+'T12:00:00').toLocaleDateString('pt-BR'):'—'}${venc?' ⚠️':vhj?' (hoje)':''}</td><td style="padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;">${p.dataPag||p.data_pagamento||'—'}${p.pago?` <button onclick="editarDataPag(${ct.id},${pn})" title="Corrigir data/valor" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gold);padding:0 2px;">✏️</button>`:''}</td><td style="padding:8px;"><span class="tag ${p.pago?'tag-green':'tag-muted'}">${p.pago?'✅ Pago':'Pendente'}</span></td><td style="padding:8px;">${acao}</td></tr>`;
+    }).join('');
+    return`<div class="card" style="${cardStyle}"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao} ${badges}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div>${origemNota}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${acoesAtivo}${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join(''):'<div class="empty-state"><span class="icon">💰</span>Nenhum contrato.</div>';
+}
+
+// ═══════════ ADICIONAR PARCELA A CONTRATO EXISTENTE ═══════════
+let _addParcelaCt=null;
+function mfAddParcela(ctId){
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const ct=(c.contratos||[]).find(x=>x.id===ctId);if(!ct||!ctAtivo(ct))return;
+  _addParcelaCt=ctId;
+  const nAtual=ct.parcelas.length;
+  document.getElementById('map-info').innerHTML=`Contrato: <strong style="color:var(--gold);">${ct.desc||ct.descricao}</strong><br>Parcelas atuais: <strong>${nAtual}</strong> · a nova será a Parcela <strong>${nAtual+1}</strong>`;
+  document.getElementById('map-valor').value='';
+  document.getElementById('map-venc').value='';
+  openM('m-add-parcela');
+}
+function confirmAddParcela(){
+  if(_addParcelaCt==null)return;
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const ct=(c.contratos||[]).find(x=>x.id===_addParcelaCt);if(!ct)return;
+  const val=parseFloat(document.getElementById('map-valor').value);
+  const venc=document.getElementById('map-venc').value||null;
+  if(isNaN(val)||val<=0){alert('⚠️ Informe o valor da parcela.');return;}
+  const proxNum=ct.parcelas.reduce((m,p)=>Math.max(m,(p.num||p.numero||0)),0)+1;
+  ct.parcelas.push({id:genId(),num:proxNum,numero:proxNum,valor:val,vencimento:venc,vencto:venc,pago:false,dataPag:''});
+  // Atualiza automaticamente a quantidade de parcelas e o total do contrato
+  ct.nP=ct.parcelas.length;
+  ct.n_parcelas=ct.parcelas.length;
+  const novoTotal=(parseFloat(ct.total||ct.valor_total||0))+val;
+  ct.total=novoTotal;
+  ct.valor_total=novoTotal;
+  _addParcelaCt=null;
+  save();
+  closeM('m-add-parcela');
+  mfRenderFin();
+  renderDash();
+}
+
+// ═══════════ REPARCELAMENTO ═══════════
+let _repOrigemId=null;
+function mfAbrirReparcelamento(ctId){
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const ct=(c.contratos||[]).find(x=>x.id===ctId);if(!ct||!ctAtivo(ct))return;
+  _repOrigemId=ctId;
+  const tot=parseFloat(ct.total||ct.valor_total||0);
+  const recebido=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+vRec(p),0);
+  const saldo=Math.max(0,tot-recebido);
+  document.getElementById('mrep-info').innerHTML=`Contrato de origem: <strong style="color:var(--gold);">${ct.desc||ct.descricao}</strong><br>Total original: R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})} · Já recebido: <strong style="color:var(--green);">R$ ${recebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong><br>Saldo em aberto: <strong style="color:var(--gold);">R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>`;
+  document.getElementById('mrep-desc').value='Reparcelamento — '+(ct.desc||ct.descricao);
+  document.getElementById('mrep-total').value=saldo>0?saldo.toFixed(2):'';
+  document.getElementById('mrep-parc').value='';
+  document.getElementById('mrep-vparc').value='';
+  document.getElementById('mrep-inicio').value='';
+  openM('m-reparcelamento');
+}
+function mfCriarReparcelamento(){
+  if(_repOrigemId==null)return;
+  const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const origem=(c.contratos||[]).find(x=>x.id===_repOrigemId);if(!origem)return;
+  const desc=document.getElementById('mrep-desc').value.trim();
+  const total=parseFloat(document.getElementById('mrep-total').value);
+  const nP=parseInt(document.getElementById('mrep-parc').value);
+  const vP=parseFloat(document.getElementById('mrep-vparc').value);
+  const ini=document.getElementById('mrep-inicio').value;
+  if(!desc||isNaN(total)||total<=0||isNaN(nP)||nP<1){alert('⚠️ Preencha descrição, valor total e nº de parcelas.');return;}
+  const vParc=isNaN(vP)?parseFloat((total/nP).toFixed(2)):vP;
+  const parcelas=Array.from({length:nP},(_,i)=>{
+    let vencto=null;
+    if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}
+    return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};
+  });
+  // Inativa automaticamente o contrato de origem
+  origem.ativo=false;
+  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo:'reparcelamento',origemId:origem.id,criadoEm:new Date().toISOString(),criadoPor:eu()});
+  _repOrigemId=null;
+  save();
+  addAtiv('🔄 Reparcelamento: '+c.nome+' — '+desc);
+  closeM('m-reparcelamento');
+  mfRenderFin();
+  renderDash();
 }
 
 let _editDataPag = null;
@@ -2445,6 +2641,7 @@ function editarDataPag(ctId, pNum) {
     const pts = dp.split('/');
     if (pts.length === 3) { document.getElementById('medp-data').value = pts[2] + '-' + pts[1] + '-' + pts[0]; }
   } else { document.getElementById('medp-data').value = new Date().toISOString().slice(0,10); }
+  document.getElementById('medp-valor').value = vRec(p);
   openM('m-editar-datapag');
 }
 
@@ -2458,7 +2655,10 @@ function salvarEdicaoDataPag() {
   if (!ct) return;
   const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
   if (!p) return;
+  const valRec = parseFloat(document.getElementById('medp-valor').value);
+  if (isNaN(valRec) || valRec < 0) { alert('⚠️ Informe o valor recebido.'); return; }
   const [ano, mes2, dia] = dataISO.split('-');
+  p.valorPago = valRec;
   p.dataPag = dia + '/' + mes2 + '/' + ano;
   p.data_pagamento = p.dataPag;
   _editDataPag = null;
@@ -2491,7 +2691,7 @@ function renderPanorama(){
   const recVendas=vendasMes.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
   let recParcelas=0;
   S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{
-    if(p.pago){const dp=p.dataPag||p.data_pagamento||'';if(dp){const pts=dp.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)recParcelas+=parseFloat(p.valor)||0;}}
+    if(p.pago){const dp=p.dataPag||p.data_pagamento||'';if(dp){const pts=dp.split('/');if(pts.length===3&&pts[2]+"-"+pts[1]===mes)recParcelas+=vRec(p);}}
   });});});
   const recTotal=recVendas+recParcelas;
   const tarPen=S.tarefas.filter(t=>t.status!=='concluido').length;
@@ -2630,22 +2830,24 @@ function renderFinanceiro() {
   const pagamentos=[], atrasos=[], proximas=[];
   S.clientes.forEach(cli => {
     (cli.contratos||[]).forEach(ct => {
+      const ativo = ctAtivo(ct);
       const tot = parseFloat(ct.total||ct.valor_total||0);
-      totalContratado += tot;
+      if(ativo) totalContratado += tot; // contratos inativos (reparcelados) não contam no contratado
       (ct.parcelas||[]).forEach(p => {
         const val = parseFloat(p.valor)||0;
+        const recibo = vRec(p); // valor realmente recebido
         const vd = p.vencimento||p.vencto||'';
         const dp = p.dataPag||p.data_pagamento||'';
         if(p.pago) {
-          recTotal += val;
+          recTotal += recibo;
           if(dp) {
             const pts = dp.split('/');
             if(pts.length===3 && pts[2]+'-'+pts[1]===mes) {
-              recMes += val;
-              pagamentos.push({cliente:cli.nome, contrato:ct.desc||ct.descricao, parcela:p.num||p.numero, valor:val, dataPag:dp});
+              recMes += recibo;
+              pagamentos.push({cliente:cli.nome, contrato:ct.desc||ct.descricao, parcela:p.num||p.numero, valor:recibo, dataPag:dp});
             }
           }
-        } else {
+        } else if(ativo) { // parcelas não pagas de contratos inativos foram substituídas pelo reparcelamento
           totalPendente += val;
           if(vd && vd < hoje) { const diff=Math.floor((new Date(hoje)-new Date(vd))/86400000); atrasos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd,atraso:diff}); }
           else if(vd && vd >= hoje && vd <= em30ISO) { proximas.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd}); }
@@ -2736,7 +2938,7 @@ function renderRelDia(colabs){
   const tv=S.vendas.filter(v=>(v.data===data||v.data_venda===data)&&v.status==='fechado');
   const totalCtDia=tv.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
   let vlrRecDia=0;
-  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3){const iso=pts[2]+'-'+pts[1]+'-'+pts[0];if(iso===data)vlrRecDia+=parseFloat(p.valor)||0;}}}});});});
+  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3){const iso=pts[2]+'-'+pts[1]+'-'+pts[0];if(iso===data)vlrRecDia+=vRec(p);}}}});});});
   document.getElementById('rel-stats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${ta}</div><div class="stat-icon">📋</div></div>
     <div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val">${tv.length}</div><div class="stat-icon">📄</div><div class="stat-change">R$ ${totalCtDia.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>
@@ -2758,7 +2960,7 @@ function renderRelMes(colabs){
   const nTotal=vm.length;
   const totalContratado=vm.reduce((s,v)=>s+(parseFloat(v.valor)||0),0);
   let vlrRecebido=0;
-  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3&&pts[2]+'-'+pts[1]===mes)vlrRecebido+=parseFloat(p.valor)||0;}}});});});
+  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{(ct.parcelas||[]).forEach(p=>{if(p.pago){const dp2=p.dataPag||p.data_pagamento||'';if(dp2){const pts=dp2.split('/');if(pts.length===3&&pts[2]+"-"+pts[1]===mes)vlrRecebido+=vRec(p);}}});});});
   document.getElementById('rel-stats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Dias com Ponto</div><div class="stat-val">${dp}</div><div class="stat-icon">🕐</div></div>
     <div class="stat-card"><div class="stat-label">Atendimentos</div><div class="stat-val">${am.length}</div><div class="stat-icon">📋</div></div>
@@ -2834,11 +3036,15 @@ atualizarSidebar = function() {
 </script>
 
 <script>
+// Registra o Service Worker apenas se o arquivo sw.js realmente existir.
+// Silencioso: não polui o console quando o sw.js não está presente.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js')
-      .then(function(reg) { console.log('SW registrado'); })
-      .catch(function(err) { console.log('SW erro:', err); });
+    fetch('sw.js', { method: 'HEAD' })
+      .then(function(resp) {
+        if (resp.ok) { return navigator.serviceWorker.register('sw.js'); }
+      })
+      .catch(function() { /* sw.js indisponível — ignora silenciosamente */ });
   });
 }
 </script>
