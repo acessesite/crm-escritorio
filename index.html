@@ -378,6 +378,13 @@ img, video, iframe { max-width: 100%; }
         <div class="stat-card"><div class="stat-label">Tarefas Concluídas</div><div class="stat-val" id="st-tar-con">0</div><div class="stat-icon" style="color:var(--green);opacity:1;">✅</div></div>
         <div class="stat-card"><div class="stat-label">Contratos Fechados</div><div class="stat-val" id="st-contratos">0</div><div class="stat-icon">📄</div></div>
       </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-header"><div class="card-title">📞 Parcelas a Vencer — Próximos 7 dias</div></div>
+        <div style="overflow-x:auto;">
+          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th>Cobrança (contato feito)</th></tr></thead>
+          <tbody id="dash-vencer7"></tbody></table>
+        </div>
+      </div>
       <div class="dash-grid">
         <div class="card"><div class="card-header"><div class="card-title">Últimas Atividades</div></div><div style="padding:16px 20px;" id="feed-ativ"></div></div>
         <div class="card"><div class="card-header"><div class="card-title">Próximas Tarefas</div></div><div style="padding:16px 20px;" id="feed-tar"></div></div>
@@ -1597,6 +1604,52 @@ function renderDash() {
   document.getElementById('feed-ativ').innerHTML=ativs.slice(0,8).map(a=>`<div class="activity-item"><div class="activity-dot"></div><div><div style="font-size:13px;">${a.txt||a.texto||''}</div><div style="font-size:11px;color:var(--muted);">${a.data_registro||a.data||''} às ${a.hora||''}</div></div></div>`).join('')||'<div class="empty-state"><span class="icon">📭</span>Nenhuma atividade</div>';
   const tp=minhasT().filter(t=>t.status!=='concluido').slice(0,5);
   document.getElementById('feed-tar').innerHTML=tp.map(t=>`<div class="activity-item"><div class="activity-dot" style="background:${t.prioridade==='urgente'?'#C94C4C':t.prioridade==='alta'?'#C9A84C':'#4C7EC9'}"></div><div><div style="font-size:13px;">${t.titulo}</div><div style="font-size:11px;color:var(--muted);">${t.area||''}${t.prazo?' · '+new Date(t.prazo+'T12:00:00').toLocaleDateString('pt-BR'):''}</div></div></div>`).join('')||'<div class="empty-state"><span class="icon">✅</span>Sem tarefas pendentes</div>';
+  renderVencer7();
+}
+
+// Parcelas a vencer nos próximos 7 dias, com registro de cobrança (quem contatou e quando)
+function renderVencer7(){
+  const tbody=document.getElementById('dash-vencer7'); if(!tbody) return;
+  const hoje=new Date().toISOString().slice(0,10);
+  const lim=new Date(); lim.setDate(lim.getDate()+7); const limISO=lim.toISOString().slice(0,10);
+  const itens=[];
+  S.clientes.forEach(cli=>{(cli.contratos||[]).forEach(ct=>{
+    if(!ctAtivo(ct)) return;
+    (ct.parcelas||[]).forEach(p=>{
+      if(p.pago) return;
+      const vd=p.vencimento||p.vencto||''; if(!vd) return;
+      if(vd>=hoje && vd<=limISO){
+        itens.push({cliId:cli.id,ctId:ct.id,pn:p.num||p.numero,cliente:cli.nome,contrato:ct.desc||ct.descricao,valor:parseFloat(p.valor)||0,vencimento:vd,cobrancas:p.cobrancas||[]});
+      }
+    });
+  });});
+  itens.sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
+  tbody.innerHTML = itens.length ? itens.map(it=>{
+    const diff=Math.floor((new Date(it.vencimento)-new Date(hoje))/86400000);
+    const quando = diff===0?'hoje':(diff===1?'amanhã':'em '+diff+' dias');
+    const cor = diff<=2?'var(--gold)':'var(--muted)';
+    let cob;
+    if(it.cobrancas && it.cobrancas.length){
+      const ult=it.cobrancas[it.cobrancas.length-1];
+      const dt=new Date(ult.em);
+      cob=`<span class="tag tag-green">✅ Cobrado</span> <span style="font-size:11px;color:var(--muted);">por <strong style="color:var(--gold);">${ult.por}</strong> em ${dt.toLocaleDateString('pt-BR')} às ${dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}${it.cobrancas.length>1?` · ${it.cobrancas.length}x`:''}</span> <button class="btn btn-sm btn-ghost" onclick="registrarCobranca(${it.cliId},${it.ctId},${it.pn})" title="Registrar novo contato">+ contato</button>`;
+    } else {
+      cob=`<span class="tag tag-red">❌ Não cobrado</span> <button class="btn btn-sm btn-gold" onclick="registrarCobranca(${it.cliId},${it.ctId},${it.pn})">📞 Registrar cobrança</button>`;
+    }
+    return `<tr><td data-label="Cliente" onclick="finAbrirCliente(${it.cliId})" style="font-weight:600;cursor:pointer;color:var(--gold);text-decoration:underline;text-underline-offset:2px;">${it.cliente}</td><td data-label="Contrato">${it.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${it.pn}</td><td data-label="Valor" style="font-weight:600">R$ ${it.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(it.vencimento+'T12:00:00').toLocaleDateString('pt-BR')} <span style="font-size:11px;">(${quando})</span></td><td data-label="Cobrança">${cob}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela vencendo nos próximos 7 dias</td></tr>';
+}
+
+// Registra que o contato/cobrança foi feito: quem e quando
+function registrarCobranca(cliId, ctId, pNum){
+  const cli=S.clientes.find(x=>x.id===cliId); if(!cli) return;
+  const ct=(cli.contratos||[]).find(x=>x.id===ctId); if(!ct) return;
+  const p=(ct.parcelas||[]).find(x=>(x.num===pNum||x.numero===pNum)); if(!p) return;
+  if(!p.cobrancas) p.cobrancas=[];
+  p.cobrancas.push({por:eu(), em:new Date().toISOString()});
+  _touch(cli);
+  save();
+  renderVencer7();
 }
 
 // ═══════════ PONTO — CORRIGIDO ═══════════
