@@ -539,12 +539,12 @@ img, video, iframe { max-width: 100%; }
         </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-header"><div class="card-title" id="fin-title-receber">⏳ A Receber no Mês</div></div>
-          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th></tr></thead>
+          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th></th></tr></thead>
           <tbody id="fin-proximas"></tbody></table>
         </div>
         <div class="card">
           <div class="card-header"><div class="card-title" id="fin-title-atraso">⚠️ Parcelas em Atraso no Mês</div></div>
-          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th>Atraso</th></tr></thead>
+          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th><th>Atraso</th><th></th></tr></thead>
           <tbody id="fin-atrasos"></tbody></table>
         </div>
       </div>
@@ -2468,7 +2468,7 @@ function mfMarcarParcela(ctId, pNum, pago) {
     return;
   }
 
-  _pagPendente = { ctId, pNum };
+  _pagPendente = { cliId: fichaId, ctId, pNum, source: 'ficha' };
   const venctoISO = p.vencimento || p.vencto || '';
   const venctoFmt = venctoISO ? new Date(venctoISO + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
   document.getElementById('mdp-info').innerHTML =
@@ -2485,8 +2485,8 @@ function confirmarPagamento() {
   if (!_pagPendente) return;
   const dataISO = document.getElementById('mdp-data').value;
   if (!dataISO) { alert('⚠️ Informe a data do pagamento.'); return; }
-  const { ctId, pNum } = _pagPendente;
-  const c = S.clientes.find(x => x.id == fichaId);
+  const { cliId, ctId, pNum, source } = _pagPendente;
+  const c = S.clientes.find(x => x.id == (cliId!=null?cliId:fichaId));
   const ct = (c.contratos || []).find(x => x.id === ctId);
   if (!ct) return;
   const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
@@ -2501,8 +2501,37 @@ function confirmarPagamento() {
   _pagPendente = null;
   save();
   closeM('m-data-pagamento');
-  mfRenderFin();
+  if (source === 'fin') { renderFinanceiro(); }
+  else { mfRenderFin(); }
   renderDash();
+}
+
+// Marcar parcela como paga direto pela aba Financeiro
+function finMarcarPago(cliId, ctId, pNum) {
+  const c = S.clientes.find(x => x.id === cliId);
+  if (!c) return;
+  const ct = (c.contratos || []).find(x => x.id === ctId);
+  if (!ct) return;
+  const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
+  if (!p) return;
+  _pagPendente = { cliId, ctId, pNum, source: 'fin' };
+  const venctoISO = p.vencimento || p.vencto || '';
+  const venctoFmt = venctoISO ? new Date(venctoISO + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  document.getElementById('mdp-info').innerHTML =
+    `<strong>${c.nome}</strong><br>` +
+    `<strong style="color:var(--gold);">Parcela ${pNum}</strong> — R$ ${parseFloat(p.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}<br>` +
+    `Contrato: <strong>${ct.desc || ct.descricao}</strong><br>` +
+    `Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`;
+  const hoje = new Date().toISOString().slice(0, 10);
+  document.getElementById('mdp-data').value = venctoISO || hoje;
+  document.getElementById('mdp-valor').value = parseFloat(p.valor)||0;
+  openM('m-data-pagamento');
+}
+
+// Abrir a ficha do cliente já na aba Financeiro
+function finAbrirCliente(cliId) {
+  abrirFicha(cliId);
+  mfTab('fin');
 }
 
 function mfRenderFin(){
@@ -2861,24 +2890,25 @@ function renderFinanceiro() {
           // RECEBIDO (só no modo Mês): dinheiro que entrou naquele mês — conta de qualquer contrato
           if(!finGeral){
             const dp=p.dataPag||p.data_pagamento||'';
-            if(dp){ const pts=dp.split('/'); if(pts.length===3 && pts[2]+'-'+pts[1]===mes){ const rr=vRec(p); recMes+=rr; pagamentos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:rr,dataPag:dp}); } }
+            if(dp){ const pts=dp.split('/'); if(pts.length===3 && pts[2]+'-'+pts[1]===mes){ const rr=vRec(p); recMes+=rr; pagamentos.push({cliId:cli.id,cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:rr,dataPag:dp}); } }
           }
           return;
         }
         // Parcelas não pagas: só de contratos ATIVOS (inativos foram reparcelados)
         if(!ativo || !vd) return;
         const val = parseFloat(p.valor)||0;
+        const pn = p.num||p.numero;
         if(vd < hoje) {
           // EM ATRASO — no modo Mês só do mês; no modo Geral, todos
           if(!finGeral && vd.slice(0,7) !== mes) return;
           const diff=Math.floor((new Date(hoje)-new Date(vd))/86400000);
           atrasoMes += val;
-          atrasos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd,atraso:diff});
+          atrasos.push({cliId:cli.id,ctId:ct.id,pn,cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:pn,valor:val,vencimento:vd,atraso:diff});
         } else {
           // A RECEBER — no modo Mês só do mês; no modo Geral, todos
           if(!finGeral && vd.slice(0,7) !== mes) return;
           aReceberMes += val;
-          proximas.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd});
+          proximas.push({cliId:cli.id,ctId:ct.id,pn,cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:pn,valor:val,vencimento:vd});
         }
       });
     });
@@ -2899,11 +2929,11 @@ function renderFinanceiro() {
     `;
   }
   pagamentos.sort((a,b)=>b.dataPag.localeCompare(a.dataPag));
-  const finPag=document.getElementById('fin-pagamentos'); if(finPag) finPag.innerHTML=pagamentos.length?pagamentos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="color:var(--green);font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Data Pagamento">${p.dataPag}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-state">Nenhum pagamento recebido neste mês</td></tr>';
+  const finPag=document.getElementById('fin-pagamentos'); if(finPag) finPag.innerHTML=pagamentos.length?pagamentos.map(p=>`<tr><td data-label="Cliente" onclick="finAbrirCliente(${p.cliId})" style="font-weight:600;cursor:pointer;color:var(--gold);text-decoration:underline;text-underline-offset:2px;" title="Abrir ficha do cliente">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="color:var(--green);font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Data Pagamento">${p.dataPag}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-state">Nenhum pagamento recebido neste mês</td></tr>';
   proximas.sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
-  document.getElementById('fin-proximas').innerHTML=proximas.length?proximas.map(p=>{const diff=Math.floor((new Date(p.vencimento)-new Date(hoje))/86400000);const cor=diff<=7?'var(--gold)':'var(--muted)';return`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}${diff<=7?' ⚠️':''}</td></tr>`;}).join(''):`<tr><td colspan="5" class="empty-state">Nenhuma parcela a receber ${finGeral?'':'neste mês'}</td></tr>`;
+  document.getElementById('fin-proximas').innerHTML=proximas.length?proximas.map(p=>{const diff=Math.floor((new Date(p.vencimento)-new Date(hoje))/86400000);const cor=diff<=7?'var(--gold)':'var(--muted)';return`<tr><td data-label="Cliente" onclick="finAbrirCliente(${p.cliId})" style="font-weight:600;cursor:pointer;color:var(--gold);text-decoration:underline;text-underline-offset:2px;" title="Abrir ficha do cliente">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}${diff<=7?' ⚠️':''}</td><td data-label=""><button class="btn btn-sm btn-gold" onclick="finMarcarPago(${p.cliId},${p.ctId},${p.pn})">Marcar pago</button></td></tr>`;}).join(''):`<tr><td colspan="6" class="empty-state">Nenhuma parcela a receber ${finGeral?'':'neste mês'}</td></tr>`;
   atrasos.sort((a,b)=>b.atraso-a.atraso);
-  document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600;color:var(--red)">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td></tr>`).join(''):`<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso ${finGeral?'':'neste mês'}</td></tr>`;
+  document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" onclick="finAbrirCliente(${p.cliId})" style="font-weight:600;cursor:pointer;color:var(--red);text-decoration:underline;text-underline-offset:2px;" title="Abrir ficha do cliente">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td><td data-label=""><button class="btn btn-sm btn-gold" onclick="finMarcarPago(${p.cliId},${p.ctId},${p.pn})">Marcar pago</button></td></tr>`).join(''):`<tr><td colspan="7" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso ${finGeral?'':'neste mês'}</td></tr>`;
 }
 
 // ═══════════ COLABORADORES ═══════════
