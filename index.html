@@ -1551,9 +1551,13 @@ function nav(id) {
   if(id==='processos') renderProcessos();
 }
 
+let _zModal = 600;
 function openM(id){
-  document.getElementById(id).classList.add('open');
-  document.getElementById(id).style.display='flex';
+  const el=document.getElementById(id); if(!el) return;
+  el.classList.add('open');
+  el.style.display='flex';
+  _zModal += 1;
+  el.style.zIndex = _zModal; // cada modal aberto fica por cima do anterior (empilha corretamente)
   if(id==='m-cliente'){
     const sel=document.getElementById('c-fechadopor');
     if(sel){ sel.innerHTML=S.colaboradores.filter(x=>x.perfil!=='cliente').map(x=>`<option value="${x.nome}"${x.nome===eu()?' selected':''}>${x.nome}</option>`).join(''); }
@@ -1562,7 +1566,8 @@ function openM(id){
 function openMT(){fillColabs('t-resp',eu());openM('m-tarefa');}
 function closeM(id){
   var el=document.getElementById(id);if(!el)return;
-  el.classList.remove('open');el.style.display='';
+  el.classList.remove('open');el.style.display='';el.style.zIndex='';
+  if(_zModal>600) _zModal-=1;
   if(id==='m-colab'){el.dataset.editId='';document.getElementById('m-colab-title').textContent='Cadastrar Colaborador';}
   if(id==='m-tarefa'){editTarefaId=null;document.getElementById('m-tarefa-title').textContent='Nova Tarefa';}
 }
