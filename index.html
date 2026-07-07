@@ -529,6 +529,7 @@ img, video, iframe { max-width: 100%; }
             <button class="btn btn-gold" onclick="finVerMes()">Gerar</button>
             <button class="btn btn-ghost" id="fin-btn-geral" onclick="finVerGeral()" style="margin-left:auto;">📊 Ver Geral</button>
             <button class="btn btn-ghost" id="fin-btn-fix" onclick="corrigirReparcelamentosAntigos()" style="display:none;" title="Inativa os contratos antigos de todos os clientes que já têm reparcelamento (não marca nada como pago)">🔧 Corrigir reparcelamentos</button>
+            <button class="btn btn-ghost" onclick="abrirBackup()" title="Backup e restauração dos dados">💾 Backup</button>
           </div>
         </div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold);margin-bottom:16px;" id="fin-title"></div>
@@ -730,6 +731,27 @@ img, video, iframe { max-width: 100%; }
       <button class="btn btn-ghost" onclick="closeM('m-reparcelamento')">Cancelar</button>
       <button class="btn btn-gold" onclick="mfCriarReparcelamento()">🔄 Criar Reparcelamento</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL BACKUP / RESTAURAÇÃO -->
+<div class="modal-overlay" id="m-backup">
+  <div class="modal" style="width:620px;max-width:96vw;">
+    <div class="modal-header">
+      <div class="modal-title">💾 Backup e Segurança dos Dados</div>
+      <button class="modal-close" onclick="closeM('m-backup')">✕</button>
+    </div>
+    <div style="margin-bottom:18px;font-size:13px;color:var(--muted);line-height:1.6;">
+      Baixe um arquivo de backup e guarde em local seguro. Se algum dado sumir, você pode restaurar a partir de um arquivo ou de um dos backups automáticos abaixo. Restaurar <strong>mescla</strong> os dados (recupera o que faltou sem apagar o que existe).
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+      <button class="btn btn-gold" onclick="exportBackup()">⬇️ Baixar backup (arquivo)</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('backup-file').click()">⬆️ Restaurar de arquivo</button>
+      <input type="file" id="backup-file" accept="application/json,.json" style="display:none;" onchange="importBackup(event)">
+      <button class="btn btn-ghost" onclick="backupLocal('manual');renderBackups();" style="margin-left:auto;">➕ Backup agora</button>
+    </div>
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">Backups automáticos no navegador</div>
+    <div id="backup-lista" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -1227,10 +1249,103 @@ if (!S.processos) S.processos = [];
 const extrasColab = (S.colaboradores || []).filter(c => c.id > 5);
 S.colaboradores = [...COLABS_FIXOS, ...extrasColab];
 
+// ═══════════ PROTEÇÃO DE DADOS (merge + backups) ═══════════
+// Marca um cliente como alterado agora (usado para resolver conflitos de sincronização)
+function _touch(c){ if(c) c.updatedAt = Date.now(); }
+function _cliTs(c){ return (c && c.updatedAt) ? c.updatedAt : 0; }
+// "Riqueza" dos dados de um cliente — usado como desempate quando não há data
+function _scoreCliente(c){
+  let s=(c&&c.contratos?c.contratos.length:0)*100000;
+  (c&&c.contratos||[]).forEach(ct=>{ s+=(ct.parcelas||[]).length*1000; (ct.parcelas||[]).forEach(p=>{ if(p.pago){ s+=1000; s+=(parseFloat((p.valorPago!=null&&p.valorPago!=='')?p.valorPago:p.valor)||0); } }); });
+  s+=(c&&c.acompanhamentos?c.acompanhamentos.length:0)*10;
+  return s;
+}
+// Une duas listas de clientes por id, SEM perder ninguém. Em conflito, vence o mais recente (updatedAt); empate → o mais completo.
+function mergeClientes(a, b){
+  a=Array.isArray(a)?a:[]; b=Array.isArray(b)?b:[];
+  const map=new Map();
+  a.forEach(c=>{ if(c&&c.id!=null) map.set(String(c.id), c); });
+  b.forEach(c=>{
+    if(!c||c.id==null) return;
+    const k=String(c.id); const ex=map.get(k);
+    if(!ex){ map.set(k, c); return; }
+    const ta=_cliTs(ex), tb=_cliTs(c);
+    let keep;
+    if(ta!==tb) keep = tb>ta ? c : ex;
+    else keep = _scoreCliente(c) > _scoreCliente(ex) ? c : ex;
+    map.set(k, keep);
+  });
+  return Array.from(map.values());
+}
+// Backups automáticos rotativos no navegador (guarda os últimos 25 estados)
+function backupLocal(motivo){
+  try{
+    const atual=localStorage.getItem('crm_cb'); if(!atual) return;
+    let backs=JSON.parse(localStorage.getItem('crm_cb_backups')||'[]');
+    if(backs.length && backs[0].data===atual) return; // não duplica estado idêntico
+    let nCli=0; try{ nCli=(JSON.parse(atual).clientes||[]).length; }catch(e){}
+    backs.unshift({ts:new Date().toISOString(), motivo:motivo||'', clientes:nCli, data:atual});
+    backs=backs.slice(0,25);
+    localStorage.setItem('crm_cb_backups', JSON.stringify(backs));
+  }catch(e){}
+}
+
 function save() {
+  backupLocal('salvar');
   const sToSave = {...S, colaboradores: S.colaboradores.filter(c => c.id > 5)};
   localStorage.setItem('crm_cb', JSON.stringify(sToSave));
   syncToFirebase();
+}
+
+// ─── Backup / Restauração (arquivo e locais) ───
+function abrirBackup(){ renderBackups(); openM('m-backup'); }
+function exportBackup(){
+  try{
+    const dados = localStorage.getItem('crm_cb') || JSON.stringify(S);
+    const blob = new Blob([dados], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    a.href=url; a.download=`backup-crm-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }catch(e){ alert('Erro ao gerar backup: '+e); }
+}
+function _aplicarRestauracao(obj, origem){
+  if(!obj || typeof obj!=='object'){ alert('Arquivo inválido.'); return; }
+  const nCli = Array.isArray(obj.clientes)?obj.clientes.length:0;
+  if(!confirm(`Restaurar backup ${origem}?\n\nContém ${nCli} cliente(s). Os dados serão MESCLADOS com os atuais (recupera o que faltou, sem apagar o que já existe).`)) return;
+  backupLocal('antes-de-restaurar');
+  if(Array.isArray(obj.clientes)) S.clientes = mergeClientes(S.clientes, obj.clientes);
+  ['tarefas','atendimentos','vendas','atividades','negociacoes','processos'].forEach(k=>{ if(Array.isArray(obj[k]) && obj[k].length>= (S[k]||[]).length) S[k]=obj[k]; });
+  if(obj.ponto && typeof obj.ponto==='object') S.ponto = {...obj.ponto, ...S.ponto};
+  save();
+  renderBackups();
+  if(typeof renderClientes==='function') renderClientes();
+  if(typeof renderDash==='function') renderDash();
+  alert('✅ Restauração concluída. Agora existem '+S.clientes.length+' clientes.');
+}
+function importBackup(ev){
+  const file = ev.target.files && ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(){ try{ _aplicarRestauracao(JSON.parse(reader.result), 'do arquivo'); }catch(e){ alert('Não foi possível ler o arquivo: '+e); } ev.target.value=''; };
+  reader.readAsText(file);
+}
+function renderBackups(){
+  let backs=[]; try{ backs=JSON.parse(localStorage.getItem('crm_cb_backups')||'[]'); }catch(e){}
+  const el=document.getElementById('backup-lista'); if(!el) return;
+  el.innerHTML = backs.length ? backs.map((b,i)=>{
+    const dt=new Date(b.ts); const q=(b.clientes!=null?b.clientes:'?');
+    return `<div style="display:flex;align-items:center;gap:10px;background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:8px 12px;">
+      <div style="flex:1;font-size:12px;"><strong>${dt.toLocaleString('pt-BR')}</strong> · <span style="color:var(--gold);">${q} clientes</span> <span style="color:var(--muted);">(${b.motivo||'—'})</span></div>
+      <button class="btn btn-ghost btn-sm" onclick="restoreBackup(${i})">Restaurar</button>
+    </div>`;
+  }).join('') : '<div class="empty-state">Nenhum backup automático ainda.</div>';
+}
+function restoreBackup(i){
+  let backs=[]; try{ backs=JSON.parse(localStorage.getItem('crm_cb_backups')||'[]'); }catch(e){}
+  const b=backs[i]; if(!b) return;
+  try{ _aplicarRestauracao(JSON.parse(b.data), 'de '+new Date(b.ts).toLocaleString('pt-BR')); }catch(e){ alert('Backup corrompido: '+e); }
 }
 
 function savePonto() {
@@ -1242,6 +1357,15 @@ let syncTimeout = null;
 function syncToFirebase() {
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async function() {
+    showSync('⟳ Sincronizando...', '');
+    // Antes de enviar, busca o remoto e MESCLA — assim nunca apagamos clientes/pagamentos de outro aparelho
+    let remote=null;
+    try{ remote = await fbGet('crm'); }catch(e){}
+    if(remote && Array.isArray(remote.clientes)){
+      S.clientes = mergeClientes(S.clientes, remote.clientes);
+      const sToSave={...S, colaboradores:S.colaboradores.filter(c=>c.id>5)};
+      try{ localStorage.setItem('crm_cb', JSON.stringify(sToSave)); }catch(e){}
+    }
     const data = {
       clientes: S.clientes,
       tarefas: S.tarefas,
@@ -1251,7 +1375,6 @@ function syncToFirebase() {
       negociacoes: S.negociacoes,
       processos: S.processos
     };
-    showSync('⟳ Sincronizando...', '');
     const ok = await fbSet('crm', data);
     showSync(ok ? '✅ Sincronizado' : '❌ Falha no sync', ok ? 'ok' : 'error');
   }, 1500);
@@ -1259,9 +1382,11 @@ function syncToFirebase() {
 
 async function loadFromFirebase() {
   showLoader('Sincronizando dados...');
+  backupLocal('antes-de-carregar'); // guarda o estado local antes de mesclar
   const data = await fbGet('crm');
   if (data) {
-    if (data.clientes) S.clientes = data.clientes;
+    // Clientes: MESCLA (nunca substitui) para não perder ninguém que exista só localmente
+    if (Array.isArray(data.clientes)) S.clientes = mergeClientes(S.clientes, data.clientes);
     if (data.tarefas) S.tarefas = data.tarefas;
     if (data.atendimentos) S.atendimentos = data.atendimentos;
     if (data.vendas) S.vendas = data.vendas;
@@ -1384,7 +1509,7 @@ const ACTIONS={
   tarefas:'<button class="btn btn-gold" onclick="openMT()">+ Nova Tarefa</button>',
   atendimentos:'<button class="btn btn-gold" onclick="openAtend()">+ Registrar</button>',
   vendas:'<button class="btn btn-gold" onclick="openVenda()">+ Nova Venda</button>',
-  clientes:'<button class="btn btn-gold" onclick="openM(&quot;m-cliente&quot;)">+ Novo Cliente</button>',
+  clientes:'<button class="btn btn-ghost" onclick="abrirBackup()" style="margin-right:8px;">💾 Backup</button><button class="btn btn-gold" onclick="openM(&quot;m-cliente&quot;)">+ Novo Cliente</button>',
   colaboradores:'<button class="btn btn-gold" onclick="openColab()">+ Novo Colaborador</button>',
   processos:'<button class="btn btn-gold" onclick="openNovoProcesso()">+ Novo Processo</button>',
 };
@@ -2321,7 +2446,7 @@ function deletarCliente(id) {
 
 function salvarCliente(){
   const nome=document.getElementById('c-nome').value.trim();if(!nome)return;
-  S.clientes.push({id:genId(),nome,cpf:document.getElementById('c-cpf').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,area:document.getElementById('c-area').value,status:document.getElementById('c-status').value,obs:document.getElementById('c-obs').value,fechadoPor:document.getElementById('c-fechadopor')?.value||eu(),acompanhamentos:[],contratos:[],criadoEm:new Date().toISOString(),criadoPor:eu()});
+  S.clientes.push({id:genId(),nome,cpf:document.getElementById('c-cpf').value,tel:document.getElementById('c-tel').value,email:document.getElementById('c-email').value,area:document.getElementById('c-area').value,status:document.getElementById('c-status').value,obs:document.getElementById('c-obs').value,fechadoPor:document.getElementById('c-fechadopor')?.value||eu(),acompanhamentos:[],contratos:[],criadoEm:new Date().toISOString(),updatedAt:Date.now(),criadoPor:eu()});
   addAtiv('👤 Novo cliente: '+nome);save();closeM('m-cliente');renderClientes();
   ['c-nome','c-cpf','c-tel','c-email','c-obs'].forEach(id=>document.getElementById(id).value='');
 }
@@ -2366,6 +2491,7 @@ function salvarFicha(){
   c.obs=document.getElementById('fe-obs').value;
   const fpEl=document.getElementById('fe-fechadopor');
   if(fpEl)c.fechadoPor=fpEl.value;
+  _touch(c);
   save();renderClientes();
   document.getElementById('mf-nome').textContent=c.nome;
   document.getElementById('mf-sub').textContent=[c.cpf,c.area,c.status].filter(Boolean).join(' · ');
@@ -2378,6 +2504,7 @@ function mfAddAcomp(){
   if(!c.acompanhamentos)c.acompanhamentos=[];
   const now=new Date();
   c.acompanhamentos.unshift({id:genId(),tipo:document.getElementById('mf-tipo').value,texto,autor:eu(),dia_semana:now.toLocaleDateString('pt-BR',{weekday:'long'}),data_registro:now.toLocaleDateString('pt-BR'),hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});
+  _touch(c);
   save();document.getElementById('mf-acomp-texto').value='';
   addAtiv('🔍 Acomp: '+c.nome+' — '+texto.slice(0,40));
   mfRenderAcomp();
@@ -2444,6 +2571,7 @@ function mfAddContrato(){
     }
   }
   c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo,origemId,criadoEm:new Date().toISOString(),criadoPor:eu()});
+  _touch(c);
   save();
   ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value='');
   addAtiv((tipo==='reparcelamento'?'🔄 Reparcelamento: ':'💰 Contrato: ')+c.nome+' — '+desc);
@@ -2463,6 +2591,7 @@ function mfMarcarParcela(ctId, pNum, pago) {
     p.pago = false;
     p.dataPag = '';
     p.data_pagamento = '';
+    _touch(c);
     save();
     mfRenderFin();
     renderDash();
@@ -2500,6 +2629,7 @@ function confirmarPagamento() {
   p.dataPag = dia + '/' + mes2 + '/' + ano;
   p.data_pagamento = p.dataPag;
   _pagPendente = null;
+  _touch(c);
   save();
   closeM('m-data-pagamento');
   if (source === 'fin') { renderFinanceiro(); }
@@ -2625,6 +2755,7 @@ function confirmAddParcela(){
   ct.total=novoTotal;
   ct.valor_total=novoTotal;
   _addParcelaCt=null;
+  _touch(c);
   save();
   closeM('m-add-parcela');
   mfRenderFin();
@@ -2668,6 +2799,7 @@ function mfCriarReparcelamento(){
   origem.ativo=false;
   c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo:'reparcelamento',origemId:origem.id,criadoEm:new Date().toISOString(),criadoPor:eu()});
   _repOrigemId=null;
+  _touch(c);
   save();
   addAtiv('🔄 Reparcelamento: '+c.nome+' — '+desc);
   closeM('m-reparcelamento');
@@ -2714,6 +2846,7 @@ function salvarEdicaoDataPag() {
   p.dataPag = dia + '/' + mes2 + '/' + ano;
   p.data_pagamento = p.dataPag;
   _editDataPag = null;
+  _touch(c);
   save();
   closeM('m-editar-datapag');
   mfRenderFin();
@@ -2730,6 +2863,7 @@ function mfToggleAtivo(id){
     if(!confirm('Reativar este contrato? Ele voltará a permitir edição de pagamentos.')) return;
     ct.ativo=true;
   }
+  _touch(c);
   save();
   mfRenderFin();
   renderDash();
@@ -2738,6 +2872,7 @@ function mfToggleAtivo(id){
 function mfDelContrato(id){
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   c.contratos=c.contratos.filter(x=>x.id!==id);
+  _touch(c);
   save();mfRenderFin();
 }
 
@@ -2883,7 +3018,7 @@ function corrigirReparcelamentosAntigos(){
   if(!alvos.length){ alert('✅ Nenhum contrato antigo para inativar. Tudo já está em ordem.'); return; }
   const resumo = alvos.slice(0,15).map(a=>`• ${a.cli.nome}: ${a.ct.desc||a.ct.descricao}`).join('\n') + (alvos.length>15?`\n...e mais ${alvos.length-15}.`:'');
   if(!confirm(`Serão INATIVADOS ${alvos.length} contrato(s) antigo(s) de clientes que já têm reparcelamento:\n\n${resumo}\n\n⚠️ Nenhuma parcela será marcada como paga. Deseja continuar?`)) return;
-  alvos.forEach(a=>{ a.ct.ativo=false; });
+  alvos.forEach(a=>{ a.ct.ativo=false; _touch(a.cli); });
   save();
   renderFinanceiro();
   renderDash();
