@@ -2829,7 +2829,8 @@ function mfRenderFin(){
   document.getElementById('mf-novo-contrato-wrap').style.display='block';
   document.getElementById('mf-fin-resumo').innerHTML=cts.length?`<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:0;"><div class="stat-card" style="padding:14px;"><div class="stat-label">Contratos ativos</div><div class="stat-val" style="font-size:26px;">${nAtivos}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Recebido</div><div class="stat-val" style="font-size:20px;color:var(--green);">R$ ${rec.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div><div class="stat-card" style="padding:14px;"><div class="stat-label">Pendente</div><div class="stat-val" style="font-size:20px;color:var(--gold);">R$ ${pen.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div></div>`:'';
   const hoje=new Date().toISOString().slice(0,10);
-  document.getElementById('mf-ct-lista').innerHTML=cts.length?cts.map(ct=>{
+  const ctsOrd=[...cts].sort((a,b)=>(new Date(b.criadoEm||0))-(new Date(a.criadoEm||0)));
+  document.getElementById('mf-ct-lista').innerHTML=cts.length?ctsOrd.map(ct=>{
     const ativo=ctAtivo(ct);
     const isRep=ct.tipo==='reparcelamento';
     const origem=ct.origemId?cts.find(x=>x.id===ct.origemId):null;
