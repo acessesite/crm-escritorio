@@ -1075,13 +1075,17 @@ img, video, iframe { max-width: 100%; }
       <div id="mf-novo-contrato-wrap">
       <div class="card" style="background:var(--dark-4);margin-bottom:16px;">
         <div class="card-header"><div class="card-title" style="font-size:14px;">Novo Contrato</div></div>
-        <div style="padding:14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-          <div class="form-group"><label>Descrição *</label><input type="text" id="mf-ct-desc" placeholder="Ex: Ação Trabalhista"></div>
-          <div class="form-group"><label>Valor Total R$ *</label><input type="number" id="mf-ct-total" step="0.01" placeholder="3000.00"></div>
-          <div class="form-group"><label>Nº Parcelas *</label><input type="number" id="mf-ct-parc" min="1" placeholder="5"></div>
-          <div class="form-group"><label>Valor por Parcela R$</label><input type="number" id="mf-ct-vparc" step="0.01" placeholder="Deixe vazio para dividir"></div>
-          <div class="form-group"><label>Vencimento 1ª Parcela</label><input type="date" id="mf-ct-inicio"></div>
-          <div class="form-group" style="align-self:end;"><button class="btn btn-gold" style="width:100%;" onclick="mfAddContrato()">Criar Contrato</button></div>
+        <div style="padding:14px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+            <div class="form-group"><label>Descrição *</label><input type="text" id="mf-ct-desc" placeholder="Ex: Ação Trabalhista"></div>
+            <div class="form-group"><label>Nº Parcelas *</label><input type="number" id="mf-ct-parc" min="1" placeholder="5" oninput="mfParcRebuild()"></div>
+            <div class="form-group"><label>Valor Total R$ <span style="color:var(--muted);font-weight:400;">(opcional)</span></label><input type="number" id="mf-ct-total" step="0.01" placeholder="divide igual" oninput="mfParcFill('total')"></div>
+            <div class="form-group"><label>Vencimento 1ª <span style="color:var(--muted);font-weight:400;">(opcional)</span></label><input type="date" id="mf-ct-inicio" onchange="mfParcFill('venc')"></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin:10px 0 8px;line-height:1.5;">Digite a <strong>quantidade de parcelas</strong> e os campos de cada parcela aparecem abaixo para ajustar <strong>valor</strong> e <strong>data</strong> individualmente (podem ser diferentes). "Valor Total" e "Vencimento 1ª" são atalhos: preenchem tudo de uma vez, mas você pode alterar cada linha.</div>
+          <div id="mf-parc-editor" style="display:flex;flex-direction:column;gap:8px;"></div>
+          <div id="mf-parc-total" style="display:none;font-size:13px;color:var(--gold);font-weight:600;margin-top:10px;"></div>
+          <div style="margin-top:14px;"><button class="btn btn-gold" onclick="mfAddContrato()">Criar Contrato</button></div>
         </div>
       </div>
       </div>
@@ -2539,21 +2543,76 @@ function vRec(p){
 // Contrato é considerado ativo a não ser que tenha sido explicitamente inativado
 function ctAtivo(ct){ return ct.ativo!==false; }
 
+// ─── Editor dinâmico de parcelas do Novo Contrato ───
+function _mfAddMeses(iniISO, i){ const d=new Date(iniISO+'T12:00:00'); d.setMonth(d.getMonth()+i); return d.toISOString().slice(0,10); }
+function mfParcRebuild(){
+  const editor=document.getElementById('mf-parc-editor'); if(!editor) return;
+  let n=parseInt(document.getElementById('mf-ct-parc').value);
+  if(isNaN(n)||n<1){ editor.innerHTML=''; mfParcTotal(); return; }
+  if(n>240) n=240;
+  // preserva o que já foi digitado, por índice
+  const prevV=[], prevD=[];
+  editor.querySelectorAll('.mf-parc-row').forEach((row,i)=>{ prevV[i]=row.querySelector('.mf-parc-valor').value; prevD[i]=row.querySelector('.mf-parc-venc').value; });
+  const total=parseFloat(document.getElementById('mf-ct-total').value);
+  const ini=document.getElementById('mf-ct-inicio').value;
+  const vpad=(!isNaN(total)&&total>0)?(total/n):null;
+  let html='';
+  for(let i=0;i<n;i++){
+    const v=(prevV[i]!==undefined&&prevV[i]!=='')?prevV[i]:(vpad!=null?vpad.toFixed(2):'');
+    const d=(prevD[i]!==undefined&&prevD[i]!=='')?prevD[i]:(ini?_mfAddMeses(ini,i):'');
+    html+=`<div class="mf-parc-row" style="display:grid;grid-template-columns:80px 1fr 1fr;gap:8px;align-items:center;">`
+        +`<div style="font-size:12px;color:var(--muted);font-weight:600;">Parcela ${i+1}</div>`
+        +`<input class="mf-parc-valor" type="number" step="0.01" placeholder="Valor R$" value="${v}" oninput="mfParcTotal()">`
+        +`<input class="mf-parc-venc" type="date" value="${d}">`
+        +`</div>`;
+  }
+  editor.innerHTML=html;
+  mfParcTotal();
+}
+function mfParcFill(campo){
+  const editor=document.getElementById('mf-parc-editor'); if(!editor) return;
+  let rows=editor.querySelectorAll('.mf-parc-row');
+  if(!rows.length){ mfParcRebuild(); rows=editor.querySelectorAll('.mf-parc-row'); if(!rows.length) return; }
+  if(campo==='total'){
+    const total=parseFloat(document.getElementById('mf-ct-total').value);
+    if(isNaN(total)||total<=0) return;
+    const v=(total/rows.length);
+    rows.forEach(r=>{ r.querySelector('.mf-parc-valor').value=v.toFixed(2); });
+    mfParcTotal();
+  } else if(campo==='venc'){
+    const ini=document.getElementById('mf-ct-inicio').value; if(!ini) return;
+    rows.forEach((r,i)=>{ r.querySelector('.mf-parc-venc').value=_mfAddMeses(ini,i); });
+  }
+}
+function mfParcTotal(){
+  const editor=document.getElementById('mf-parc-editor'); const el=document.getElementById('mf-parc-total'); if(!editor||!el) return;
+  const inputs=editor.querySelectorAll('.mf-parc-valor');
+  if(!inputs.length){ el.style.display='none'; return; }
+  let t=0; inputs.forEach(inp=>{ t+=parseFloat(inp.value)||0; });
+  el.style.display='block';
+  el.textContent='Total do contrato: R$ '+t.toLocaleString('pt-BR',{minimumFractionDigits:2})+' · '+inputs.length+' parcela(s)';
+}
+
 function mfAddContrato(){
   const desc=document.getElementById('mf-ct-desc').value.trim();
-  const total=parseFloat(document.getElementById('mf-ct-total').value);
-  const nP=parseInt(document.getElementById('mf-ct-parc').value);
-  const vP=parseFloat(document.getElementById('mf-ct-vparc').value);
-  const ini=document.getElementById('mf-ct-inicio').value;
-  if(!desc||isNaN(total)||isNaN(nP)||nP<1)return;
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   if(!c.contratos)c.contratos=[];
-  const vParc=isNaN(vP)?parseFloat((total/nP).toFixed(2)):vP;
-  const parcelas=Array.from({length:nP},(_,i)=>{
-    let vencto=null;
-    if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}
-    return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};
+  const editor=document.getElementById('mf-parc-editor');
+  const rows=editor?Array.from(editor.querySelectorAll('.mf-parc-row')):[];
+  if(!desc){ alert('⚠️ Informe a descrição do contrato.'); return; }
+  if(!rows.length){ alert('⚠️ Informe a quantidade de parcelas para gerar os campos.'); return; }
+  // lê valor e data de cada parcela
+  let total=0, erro=false;
+  const parcelas=rows.map((row,i)=>{
+    const v=parseFloat(row.querySelector('.mf-parc-valor').value);
+    const d=row.querySelector('.mf-parc-venc').value||null;
+    if(isNaN(v)||v<=0) erro=true;
+    total+=isNaN(v)?0:v;
+    return{id:genId(),num:i+1,numero:i+1,valor:isNaN(v)?0:v,vencimento:d,vencto:d,pago:false,dataPag:''};
   });
+  if(erro){ alert('⚠️ Informe o valor de todas as parcelas (maior que zero).'); return; }
+  const nP=parcelas.length;
+  total=parseFloat(total.toFixed(2));
   // Se o cliente já tem contrato(s) ATIVO(S), pergunta se este novo lançamento é um reparcelamento
   const ativosExist=c.contratos.filter(ctAtivo);
   let tipo='contrato', origemId=null;
@@ -2567,13 +2626,15 @@ function mfAddContrato(){
     if(confirm(msg)){
       tipo='reparcelamento';
       origemId=ativosExist[ativosExist.length-1].id;
-      ativosExist.forEach(a=>{ a.ativo=false; }); // inativa SEM tocar no status de pagamento
+      ativosExist.forEach(a=>{ a.ativo=false; });
     }
   }
   c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo,origemId,criadoEm:new Date().toISOString(),criadoPor:eu()});
   _touch(c);
   save();
-  ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value='');
+  ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-inicio'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  if(editor) editor.innerHTML='';
+  mfParcTotal();
   addAtiv((tipo==='reparcelamento'?'🔄 Reparcelamento: ':'💰 Contrato: ')+c.nome+' — '+desc);
   mfRenderFin();
 }
