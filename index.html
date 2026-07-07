@@ -769,6 +769,19 @@ img, video, iframe { max-width: 100%; }
   </div>
 </div>
 
+<!-- MODAL SENHA DE ADMINISTRADOR (reutilizável) -->
+<div class="modal-overlay" id="m-senha-adm">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header"><div class="modal-title">🔒 Senha de administrador</div><button class="modal-close" onclick="closeM('m-senha-adm')">✕</button></div>
+    <div style="margin-bottom:18px;">
+      <div id="msa-info" style="font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5;"></div>
+      <div class="form-group"><label>Senha do administrador</label><input type="password" id="msa-senha" placeholder="••••••••" style="font-size:15px;padding:12px 14px;" onkeydown="if(event.key==='Enter')confirmarSenhaAdm()"></div>
+      <div id="msa-erro" style="color:var(--red);font-size:12px;margin-top:8px;display:none;">Senha incorreta.</div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeM('m-senha-adm')">Cancelar</button><button class="btn btn-danger" id="msa-btn" onclick="confirmarSenhaAdm()">Confirmar</button></div>
+  </div>
+</div>
+
 <!-- MODAIS -->
 <!-- MODAL EDITAR PONTO (admin) -->
 <div class="modal-overlay" id="m-editar-ponto">
@@ -1064,8 +1077,9 @@ img, video, iframe { max-width: 100%; }
 
     <div id="mfpanel-dados">
       <div class="form-grid" id="mf-grid"></div>
-      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-        <span id="mf-save-ok" style="display:none;color:var(--green);font-size:13px;margin-right:12px;">✅ Salvo!</span><button class="btn btn-gold" onclick="salvarFicha()">Salvar alterações</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;">
+        <button class="btn btn-danger btn-sm" onclick="confirmarDelCliente(fichaId)" title="Excluir cliente (requer senha de administrador)">🗑 Excluir cliente</button>
+        <div style="display:flex;align-items:center;"><span id="mf-save-ok" style="display:none;color:var(--green);font-size:13px;margin-right:12px;">✅ Salvo!</span><button class="btn btn-gold" onclick="salvarFicha()">Salvar alterações</button></div>
       </div>
     </div>
 
@@ -2531,16 +2545,39 @@ function renderClientes(){
   const q=(document.getElementById('busca-cliente')?.value||'').toLowerCase();
   const list=S.clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(c.cpf&&c.cpf.includes(q))).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR',{sensitivity:'base'}));
   const tbody=document.getElementById('tbody-clientes');
-  tbody.innerHTML=list.map((c,i)=>`<tr><td data-label="Nome" style="font-weight:600;color:var(--gold);cursor:pointer;text-decoration:underline;" data-i="${i}">${c.nome}</td><td data-label="CPF/CNPJ" style="color:var(--muted)">${c.cpf||'-'}</td><td data-label="Telefone">${c.tel||'-'}</td><td data-label="Fechado por" style="color:var(--gold);font-size:12px;">${c.fechadoPor||c.criadoPor||'-'}</td><td data-label="Área">${c.area||'-'}</td><td data-label="Status"><span class="tag ${C_TAG[c.status]||'tag-muted'}">${c.status||'-'}</span></td>${isAdmin()?`<td data-label=""><button class="btn btn-danger btn-sm" onclick="confirmarDelCliente(${c.id},event)">🗑</button></td>`:''}</tr>`).join('')||'<tr><td colspan="7" class="empty-state">Nenhum cliente</td></tr>';
+  tbody.innerHTML=list.map((c,i)=>`<tr><td data-label="Nome" style="font-weight:600;color:var(--gold);cursor:pointer;text-decoration:underline;" data-i="${i}">${c.nome}</td><td data-label="CPF/CNPJ" style="color:var(--muted)">${c.cpf||'-'}</td><td data-label="Telefone">${c.tel||'-'}</td><td data-label="Fechado por" style="color:var(--gold);font-size:12px;">${c.fechadoPor||c.criadoPor||'-'}</td><td data-label="Área">${c.area||'-'}</td><td data-label="Status"><span class="tag ${C_TAG[c.status]||'tag-muted'}">${c.status||'-'}</span></td><td data-label=""><button class="btn btn-danger btn-sm" onclick="confirmarDelCliente(${c.id},event)" title="Excluir cliente (requer senha de administrador)">🗑</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty-state">Nenhum cliente</td></tr>';
   tbody.querySelectorAll('td[data-i]').forEach(td=>{td.onclick=function(){abrirFicha(list[parseInt(this.dataset.i)].id);};});
 }
 
+// ─── Senha de administrador (reutilizável) ───
+let _senhaAdmCb=null;
+function pedirSenhaAdm(cb, info, btnLabel){
+  _senhaAdmCb=cb;
+  document.getElementById('msa-info').innerHTML=info||'Digite a senha de um administrador para confirmar esta ação.';
+  document.getElementById('msa-senha').value='';
+  document.getElementById('msa-erro').style.display='none';
+  document.getElementById('msa-btn').textContent=btnLabel||'Confirmar';
+  openM('m-senha-adm');
+  setTimeout(function(){ const el=document.getElementById('msa-senha'); if(el) el.focus(); }, 120);
+}
+function confirmarSenhaAdm(){
+  const senha=document.getElementById('msa-senha').value;
+  const admins=(S.colaboradores||[]).filter(c=>c.perfil==='administrador');
+  let ok=false; try{ ok=admins.some(a=>a.senha===btoa(senha)); }catch(e){ ok=false; }
+  if(!ok){ document.getElementById('msa-erro').style.display='block'; document.getElementById('msa-senha').value=''; return; }
+  closeM('m-senha-adm');
+  const cb=_senhaAdmCb; _senhaAdmCb=null;
+  if(typeof cb==='function') cb();
+}
+
 function confirmarDelCliente(id, event) {
-  event.stopPropagation();
+  if(event) event.stopPropagation();
   const cli = S.clientes.find(x=>x.id===id);
   if(!cli) return;
-  if(!confirm('⚠️ Apagar cliente "'+cli.nome+'" e TODOS os seus registros?\n\nEsta ação não pode ser desfeita!')) return;
-  deletarCliente(id);
+  pedirSenhaAdm(function(){
+    if(!confirm('⚠️ Apagar cliente "'+cli.nome+'" e TODOS os seus registros (contratos, parcelas, comentários)?\n\nEsta ação NÃO pode ser desfeita!')) return;
+    deletarCliente(id);
+  }, 'Excluir o cliente <strong style="color:var(--text)">'+cli.nome+'</strong> exige a senha de um <strong>administrador</strong>. Essa ação apaga o cliente e todos os registros dele.', '🗑 Excluir cliente');
 }
 
 function deletarCliente(id) {
@@ -2551,6 +2588,7 @@ function deletarCliente(id) {
   S.vendas = S.vendas.filter(v=>String(v.clienteId)!==String(id));
   addAtiv('🗑 Cliente removido: '+cli.nome);
   save();
+  closeM('m-ficha');
   renderClientes();
   renderDash();
 }
