@@ -532,6 +532,11 @@ img, video, iframe { max-width: 100%; }
         </div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--gold);margin-bottom:16px;" id="fin-title"></div>
         <div class="stat-grid" id="fin-stats" style="grid-template-columns:repeat(2,1fr);margin-bottom:24px;"></div>
+        <div class="card" style="margin-bottom:20px;" id="fin-recebidos-wrap">
+          <div class="card-header"><div class="card-title">💰 Recebido no Mês</div></div>
+          <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Data Pagamento</th></tr></thead>
+          <tbody id="fin-pagamentos"></tbody></table>
+        </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-header"><div class="card-title" id="fin-title-receber">⏳ A Receber no Mês</div></div>
           <table class="mobile-cards"><thead><tr><th>Cliente</th><th>Contrato</th><th>Parcela</th><th>Valor</th><th>Vencimento</th></tr></thead>
@@ -2821,25 +2826,36 @@ function renderFinanceiro() {
   const btnGeral = document.getElementById('fin-btn-geral');
   if(btnGeral){ btnGeral.className = 'btn ' + (finGeral?'btn-gold':'btn-ghost'); btnGeral.style.marginLeft='auto'; btnGeral.textContent = finGeral?'📊 Vendo Geral':'📊 Ver Geral'; }
   const tR=document.getElementById('fin-title-receber'); if(tR) tR.textContent = finGeral?'⏳ A Receber (Geral)':'⏳ A Receber no Mês';
-  const tA=document.getElementById('fin-title-atraso'); if(tA) tA.textContent = '⚠️ Parcelas em Atraso (Total — todos os meses)';
+  const tA=document.getElementById('fin-title-atraso'); if(tA) tA.textContent = finGeral?'⚠️ Parcelas em Atraso (Total — todos os meses)':'⚠️ Parcelas em Atraso no Mês';
+  // A tabela "Recebido no Mês" só aparece no modo Mês
+  const recWrap=document.getElementById('fin-recebidos-wrap'); if(recWrap) recWrap.style.display = finGeral?'none':'';
   const hoje = new Date().toISOString().slice(0,10);
-  let aReceberMes=0, atrasoMes=0;
-  const atrasos=[], proximas=[];
+  let recMes=0, aReceberMes=0, atrasoMes=0;
+  const pagamentos=[], atrasos=[], proximas=[];
   S.clientes.forEach(cli => {
     (cli.contratos||[]).forEach(ct => {
-      if(!ctAtivo(ct)) return; // contratos inativos (reparcelados) não entram no financeiro
+      const ativo = ctAtivo(ct);
       (ct.parcelas||[]).forEach(p => {
-        if(p.pago) return; // já pago não é "a receber" nem "em atraso"
-        const val = parseFloat(p.valor)||0;
         const vd = p.vencimento||p.vencto||'';
-        if(!vd) return;
+        if(p.pago) {
+          // RECEBIDO (só no modo Mês): dinheiro que entrou naquele mês — conta de qualquer contrato
+          if(!finGeral){
+            const dp=p.dataPag||p.data_pagamento||'';
+            if(dp){ const pts=dp.split('/'); if(pts.length===3 && pts[2]+'-'+pts[1]===mes){ const rr=vRec(p); recMes+=rr; pagamentos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:rr,dataPag:dp}); } }
+          }
+          return;
+        }
+        // Parcelas não pagas: só de contratos ATIVOS (inativos foram reparcelados)
+        if(!ativo || !vd) return;
+        const val = parseFloat(p.valor)||0;
         if(vd < hoje) {
-          // EM ATRASO: sempre conta todas as parcelas vencidas e não pagas (de qualquer mês)
+          // EM ATRASO — no modo Mês só do mês; no modo Geral, todos
+          if(!finGeral && vd.slice(0,7) !== mes) return;
           const diff=Math.floor((new Date(hoje)-new Date(vd))/86400000);
           atrasoMes += val;
           atrasos.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd,atraso:diff});
         } else {
-          // A RECEBER: respeita o filtro de mês (exceto no modo geral)
+          // A RECEBER — no modo Mês só do mês; no modo Geral, todos
           if(!finGeral && vd.slice(0,7) !== mes) return;
           aReceberMes += val;
           proximas.push({cliente:cli.nome,contrato:ct.desc||ct.descricao,parcela:p.num||p.numero,valor:val,vencimento:vd});
@@ -2847,15 +2863,27 @@ function renderFinanceiro() {
       });
     });
   });
-  const suf = finGeral ? '' : ' no Mês';
-  document.getElementById('fin-stats').innerHTML=`
-    <div class="stat-card"><div class="stat-label">A Receber${suf}</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
-    <div class="stat-card"><div class="stat-label">Em Atraso (Total)</div><div class="stat-val" style="font-size:22px;color:var(--red);">R$ ${atrasoMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⚠️</div></div>
-  `;
+  const stats = document.getElementById('fin-stats');
+  if(finGeral){
+    stats.style.gridTemplateColumns='repeat(2,1fr)';
+    stats.innerHTML=`
+      <div class="stat-card"><div class="stat-label">A Receber</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
+      <div class="stat-card"><div class="stat-label">Em Atraso (Total)</div><div class="stat-val" style="font-size:22px;color:var(--red);">R$ ${atrasoMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⚠️</div></div>
+    `;
+  } else {
+    stats.style.gridTemplateColumns='repeat(3,1fr)';
+    stats.innerHTML=`
+      <div class="stat-card"><div class="stat-label">Recebido no Mês</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div>
+      <div class="stat-card"><div class="stat-label">A Receber no Mês</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
+      <div class="stat-card"><div class="stat-label">Em Atraso no Mês</div><div class="stat-val" style="font-size:22px;color:var(--red);">R$ ${atrasoMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⚠️</div></div>
+    `;
+  }
+  pagamentos.sort((a,b)=>b.dataPag.localeCompare(a.dataPag));
+  const finPag=document.getElementById('fin-pagamentos'); if(finPag) finPag.innerHTML=pagamentos.length?pagamentos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="color:var(--green);font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Data Pagamento">${p.dataPag}</td></tr>`).join(''):'<tr><td colspan="5" class="empty-state">Nenhum pagamento recebido neste mês</td></tr>';
   proximas.sort((a,b)=>a.vencimento.localeCompare(b.vencimento));
   document.getElementById('fin-proximas').innerHTML=proximas.length?proximas.map(p=>{const diff=Math.floor((new Date(p.vencimento)-new Date(hoje))/86400000);const cor=diff<=7?'var(--gold)':'var(--muted)';return`<tr><td data-label="Cliente" style="font-weight:600">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:${cor}">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}${diff<=7?' ⚠️':''}</td></tr>`;}).join(''):`<tr><td colspan="5" class="empty-state">Nenhuma parcela a receber ${finGeral?'':'neste mês'}</td></tr>`;
   atrasos.sort((a,b)=>b.atraso-a.atraso);
-  document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600;color:var(--red)">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td></tr>`).join(''):`<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso</td></tr>`;
+  document.getElementById('fin-atrasos').innerHTML=atrasos.length?atrasos.map(p=>`<tr><td data-label="Cliente" style="font-weight:600;color:var(--red)">${p.cliente}</td><td data-label="Contrato">${p.contrato}</td><td data-label="Parcela" style="color:var(--muted)">Parcela ${p.parcela}</td><td data-label="Valor" style="font-weight:600">R$ ${p.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td data-label="Vencimento" style="color:var(--red)">${new Date(p.vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</td><td data-label="Atraso"><span class="tag tag-red">${p.atraso} dia${p.atraso>1?'s':''}</span></td></tr>`).join(''):`<tr><td colspan="6" class="empty-state" style="color:var(--green)">✅ Nenhuma parcela em atraso ${finGeral?'':'neste mês'}</td></tr>`;
 }
 
 // ═══════════ COLABORADORES ═══════════
