@@ -2293,7 +2293,7 @@ function fillClientes(selId){const sel=document.getElementById(selId);if(!sel)re
 
 function renderClientes(){
   const q=(document.getElementById('busca-cliente')?.value||'').toLowerCase();
-  const list=S.clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(c.cpf&&c.cpf.includes(q)));
+  const list=S.clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(c.cpf&&c.cpf.includes(q))).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'','pt-BR',{sensitivity:'base'}));
   const tbody=document.getElementById('tbody-clientes');
   tbody.innerHTML=list.map((c,i)=>`<tr><td data-label="Nome" style="font-weight:600;color:var(--gold);cursor:pointer;text-decoration:underline;" data-i="${i}">${c.nome}</td><td data-label="CPF/CNPJ" style="color:var(--muted)">${c.cpf||'-'}</td><td data-label="Telefone">${c.tel||'-'}</td><td data-label="Fechado por" style="color:var(--gold);font-size:12px;">${c.fechadoPor||c.criadoPor||'-'}</td><td data-label="Área">${c.area||'-'}</td><td data-label="Status"><span class="tag ${C_TAG[c.status]||'tag-muted'}">${c.status||'-'}</span></td>${isAdmin()?`<td data-label=""><button class="btn btn-danger btn-sm" onclick="confirmarDelCliente(${c.id},event)">🗑</button></td>`:''}</tr>`).join('')||'<tr><td colspan="7" class="empty-state">Nenhum cliente</td></tr>';
   tbody.querySelectorAll('td[data-i]').forEach(td=>{td.onclick=function(){abrirFicha(list[parseInt(this.dataset.i)].id);};});
