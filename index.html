@@ -632,7 +632,7 @@ img, video, iframe { max-width: 100%; }
       <div id="mdp-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
       <div class="form-group" style="margin-bottom:16px;">
         <label>💵 Valor efetivamente recebido R$ *</label>
-        <input type="number" step="0.01" id="mdp-valor" style="font-size:15px;padding:12px 14px;">
+        <input type="text" inputmode="decimal" id="mdp-valor" placeholder="0,00" style="font-size:15px;padding:12px 14px;">
         <div style="font-size:11px;color:var(--gold);margin-top:4px;">Cliente pagou menos por acordo? Ajuste o valor aqui.</div>
       </div>
       <div class="form-group">
@@ -659,7 +659,7 @@ img, video, iframe { max-width: 100%; }
       <div id="medp-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
       <div class="form-group" style="margin-bottom:16px;">
         <label>💵 Valor efetivamente recebido R$ *</label>
-        <input type="number" step="0.01" id="medp-valor" style="font-size:15px;padding:12px 14px;">
+        <input type="text" inputmode="decimal" id="medp-valor" placeholder="0,00" style="font-size:15px;padding:12px 14px;">
         <div style="font-size:11px;color:var(--gold);margin-top:4px;">Corrija também o valor recebido se necessário.</div>
       </div>
       <div class="form-group">
@@ -686,7 +686,7 @@ img, video, iframe { max-width: 100%; }
       <div id="map-info" style="background:var(--dark-4);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7;"></div>
       <div class="form-group" style="margin-bottom:16px;">
         <label>💵 Valor da parcela R$ *</label>
-        <input type="number" step="0.01" id="map-valor" placeholder="500.00" style="font-size:15px;padding:12px 14px;">
+        <input type="text" inputmode="decimal" id="map-valor" placeholder="500,00" style="font-size:15px;padding:12px 14px;">
       </div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-bottom:14px;user-select:none;">
         <input type="checkbox" id="map-paga" onchange="mfAddParcelaToggle()" style="width:16px;height:16px;"> ✅ Já foi paga (registrar recebimento agora)
@@ -724,7 +724,7 @@ img, video, iframe { max-width: 100%; }
         </div>
         <div class="form-group">
           <label>Novo valor total R$ *</label>
-          <input type="number" step="0.01" id="mrep-total" placeholder="1500.00" style="padding:11px 13px;">
+          <input type="text" inputmode="decimal" id="mrep-total" placeholder="1.500,00" style="padding:11px 13px;">
         </div>
         <div class="form-group">
           <label>Nº de parcelas *</label>
@@ -732,7 +732,7 @@ img, video, iframe { max-width: 100%; }
         </div>
         <div class="form-group">
           <label>Valor por parcela R$</label>
-          <input type="number" step="0.01" id="mrep-vparc" placeholder="Deixe vazio p/ dividir" style="padding:11px 13px;">
+          <input type="text" inputmode="decimal" id="mrep-vparc" placeholder="Deixe vazio p/ dividir" style="padding:11px 13px;">
         </div>
         <div class="form-group">
           <label>Vencimento da 1ª parcela</label>
@@ -1092,7 +1092,7 @@ img, video, iframe { max-width: 100%; }
         <div style="padding:14px;">
           <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;">
             <div class="form-group"><label>Descrição *</label><input type="text" id="mf-ct-desc" placeholder="Ex: Ação Trabalhista"></div>
-            <div class="form-group"><label>Valor Total R$ *</label><input type="number" id="mf-ct-total" step="0.01" placeholder="3000.00"></div>
+            <div class="form-group"><label>Valor Total R$ *</label><input type="text" inputmode="decimal" id="mf-ct-total" placeholder="3.000,00"></div>
             <div class="form-group"><label>Dia de vencimento <span style="color:var(--muted);font-weight:400;">(que o cliente escolheu)</span></label><input type="number" id="mf-ct-diavenc" min="1" max="31" placeholder="Ex: 10"></div>
           </div>
           <div style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5;">Crie o contrato com o <strong>valor cheio</strong> e o <strong>dia de vencimento</strong> escolhido pelo cliente. Depois vá <strong>registrando as parcelas</strong> (valor e data) — o sistema já sugere o próximo vencimento nesse dia e <strong>abate do total</strong>, mostrando o saldo. Pode adicionar ou remover parcelas quando quiser.</div>
@@ -2650,6 +2650,20 @@ function vRec(p){
 // Contrato é considerado ativo a não ser que tenha sido explicitamente inativado
 function ctAtivo(ct){ return ct.ativo!==false; }
 
+// Interpreta número no formato brasileiro: "." = milhar, "," = decimal.
+// Ex: "6.500" -> 6500 | "6.500,00" -> 6500 | "6500" -> 6500 | "783,45" -> 783.45
+function parseBR(v){
+  if(typeof v==='number') return v;
+  if(v==null) return NaN;
+  let s=String(v).trim().replace(/\s/g,'').replace(/r\$/gi,'');
+  if(!s) return NaN;
+  if(s.indexOf(',')>=0){ s=s.replace(/\./g,'').replace(',','.'); } // tem vírgula: pontos são milhar
+  else { s=s.replace(/\./g,''); } // sem vírgula: pontos são milhar (padrão BR)
+  return parseFloat(s);
+}
+// Formata número para o campo de texto BR (ex: 1500 -> "1.500,00")
+function formatBR(n){ const x=parseFloat(n); if(isNaN(x)) return ''; return x.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
 // ─── Editor dinâmico de parcelas do Novo Contrato ───
 function _mfAddMeses(iniISO, i){ const d=new Date(iniISO+'T12:00:00'); d.setMonth(d.getMonth()+i); return d.toISOString().slice(0,10); }
 function mfParcRebuild(){
@@ -2660,7 +2674,7 @@ function mfParcRebuild(){
   // preserva o que já foi digitado, por índice
   const prevV=[], prevD=[];
   editor.querySelectorAll('.mf-parc-row').forEach((row,i)=>{ prevV[i]=row.querySelector('.mf-parc-valor').value; prevD[i]=row.querySelector('.mf-parc-venc').value; });
-  const total=parseFloat(document.getElementById('mf-ct-total').value);
+  const total=parseBR(document.getElementById('mf-ct-total').value);
   const ini=document.getElementById('mf-ct-inicio').value;
   const vpad=(!isNaN(total)&&total>0)?(total/n):null;
   let html='';
@@ -2760,7 +2774,7 @@ function mfMarcarParcela(ctId, pNum, pago) {
     `Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`;
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('mdp-data').value = venctoISO || hoje;
-  document.getElementById('mdp-valor').value = parseFloat(p.valor)||0;
+  document.getElementById('mdp-valor').value = formatBR(p.valor);
   openM('m-data-pagamento');
 }
 
@@ -2774,7 +2788,7 @@ function confirmarPagamento() {
   if (!ct) return;
   const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
   if (!p) return;
-  const valRec = parseFloat(document.getElementById('mdp-valor').value);
+  const valRec = parseBR(document.getElementById('mdp-valor').value);
   if (isNaN(valRec) || valRec < 0) { alert('⚠️ Informe o valor recebido.'); return; }
   const [ano, mes2, dia] = dataISO.split('-');
   p.pago = true;
@@ -2808,7 +2822,7 @@ function finMarcarPago(cliId, ctId, pNum) {
     `Vencimento original: <span style="color:var(--muted);">${venctoFmt}</span>`;
   const hoje = new Date().toISOString().slice(0, 10);
   document.getElementById('mdp-data').value = venctoISO || hoje;
-  document.getElementById('mdp-valor').value = parseFloat(p.valor)||0;
+  document.getElementById('mdp-valor').value = formatBR(p.valor);
   openM('m-data-pagamento');
 }
 
@@ -2961,7 +2975,7 @@ function confirmAddParcela(){
   if(_addParcelaCt==null)return;
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   const ct=(c.contratos||[]).find(x=>x.id===_addParcelaCt);if(!ct)return;
-  const val=parseFloat(document.getElementById('map-valor').value);
+  const val=parseBR(document.getElementById('map-valor').value);
   if(isNaN(val)||val<=0){alert('⚠️ Informe o valor da parcela.');return;}
   const paga=document.getElementById('map-paga').checked;
   const proxNum=ct.parcelas.reduce((m,p)=>Math.max(m,(p.num||p.numero||0)),0)+1;
@@ -3012,7 +3026,7 @@ function mfAbrirReparcelamento(ctId){
   const saldo=Math.max(0,tot-recebido);
   document.getElementById('mrep-info').innerHTML=`Contrato de origem: <strong style="color:var(--gold);">${ct.desc||ct.descricao}</strong><br>Total original: R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})} · Já recebido: <strong style="color:var(--green);">R$ ${recebido.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong><br>Saldo em aberto: <strong style="color:var(--gold);">R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong>`;
   document.getElementById('mrep-desc').value='Reparcelamento — '+(ct.desc||ct.descricao);
-  document.getElementById('mrep-total').value=saldo>0?saldo.toFixed(2):'';
+  document.getElementById('mrep-total').value=saldo>0?formatBR(saldo):'';
   document.getElementById('mrep-parc').value='';
   document.getElementById('mrep-vparc').value='';
   document.getElementById('mrep-inicio').value='';
@@ -3023,9 +3037,9 @@ function mfCriarReparcelamento(){
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   const origem=(c.contratos||[]).find(x=>x.id===_repOrigemId);if(!origem)return;
   const desc=document.getElementById('mrep-desc').value.trim();
-  const total=parseFloat(document.getElementById('mrep-total').value);
+  const total=parseBR(document.getElementById('mrep-total').value);
   const nP=parseInt(document.getElementById('mrep-parc').value);
-  const vP=parseFloat(document.getElementById('mrep-vparc').value);
+  const vP=parseBR(document.getElementById('mrep-vparc').value);
   const ini=document.getElementById('mrep-inicio').value;
   if(!desc||isNaN(total)||total<=0||isNaN(nP)||nP<1){alert('⚠️ Preencha descrição, valor total e nº de parcelas.');return;}
   const vParc=isNaN(vP)?parseFloat((total/nP).toFixed(2)):vP;
@@ -3064,7 +3078,7 @@ function editarDataPag(ctId, pNum) {
     const pts = dp.split('/');
     if (pts.length === 3) { document.getElementById('medp-data').value = pts[2] + '-' + pts[1] + '-' + pts[0]; }
   } else { document.getElementById('medp-data').value = new Date().toISOString().slice(0,10); }
-  document.getElementById('medp-valor').value = vRec(p);
+  document.getElementById('medp-valor').value = formatBR(vRec(p));
   openM('m-editar-datapag');
 }
 
@@ -3078,7 +3092,7 @@ function salvarEdicaoDataPag() {
   if (!ct) return;
   const p = ct.parcelas.find(x => (x.num === pNum || x.numero === pNum));
   if (!p) return;
-  const valRec = parseFloat(document.getElementById('medp-valor').value);
+  const valRec = parseBR(document.getElementById('medp-valor').value);
   if (isNaN(valRec) || valRec < 0) { alert('⚠️ Informe o valor recebido.'); return; }
   const [ano, mes2, dia] = dataISO.split('-');
   p.valorPago = valRec;
