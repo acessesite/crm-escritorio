@@ -2426,10 +2426,26 @@ function mfAddContrato(){
     if(ini){const d=new Date(ini+'T12:00:00');d.setMonth(d.getMonth()+i);vencto=d.toISOString().slice(0,10);}
     return{id:genId(),num:i+1,numero:i+1,valor:vParc,vencimento:vencto,vencto,pago:false,dataPag:''};
   });
-  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo:'contrato',origemId:null,criadoEm:new Date().toISOString(),criadoPor:eu()});
+  // Se o cliente já tem contrato(s) ATIVO(S), pergunta se este novo lançamento é um reparcelamento
+  const ativosExist=c.contratos.filter(ctAtivo);
+  let tipo='contrato', origemId=null;
+  if(ativosExist.length){
+    const msg='⚠️ Este cliente já tem '+ativosExist.length+' contrato(s) ATIVO(S).\n\n'
+      +'Se este novo lançamento é um REPARCELAMENTO (acordo que substitui o contrato anterior):\n'
+      +'• Clique OK → o contrato antigo será INATIVADO automaticamente\n'
+      +'• As parcelas antigas NÃO serão marcadas como pagas (nada de recebimento falso)\n\n'
+      +'Se for um contrato ADICIONAL separado (que coexiste com o atual):\n'
+      +'• Clique Cancelar → os dois ficam ativos';
+    if(confirm(msg)){
+      tipo='reparcelamento';
+      origemId=ativosExist[ativosExist.length-1].id;
+      ativosExist.forEach(a=>{ a.ativo=false; }); // inativa SEM tocar no status de pagamento
+    }
+  }
+  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP,n_parcelas:nP,parcelas,ativo:true,tipo,origemId,criadoEm:new Date().toISOString(),criadoPor:eu()});
   save();
   ['mf-ct-desc','mf-ct-total','mf-ct-parc','mf-ct-vparc','mf-ct-inicio'].forEach(id=>document.getElementById(id).value='');
-  addAtiv('💰 Contrato: '+c.nome+' — '+desc);
+  addAtiv((tipo==='reparcelamento'?'🔄 Reparcelamento: ':'💰 Contrato: ')+c.nome+' — '+desc);
   mfRenderFin();
 }
 
@@ -2534,9 +2550,13 @@ function mfRenderFin(){
       const recibo=vRec(p);
       const difere=p.pago&&Math.abs(recibo-(parseFloat(p.valor)||0))>0.001;
       const colValor=`R$ ${parseFloat(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}${difere?`<div style="font-size:10px;color:var(--green);font-weight:500;">recebido R$ ${recibo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>`:''}`;
-      // Ação na parcela: contratos inativos ficam TRAVADOS (registro congelado); só ativos podem receber/desfazer pagamento
+      // Ação na parcela: contratos inativos ficam travados para NOVOS pagamentos, mas permitem estornar um pagamento lançado por engano
       let acao;
-      if(!ativo){ acao=`<span style="font-size:12px;color:var(--muted);" title="Contrato travado">🔒</span>`; }
+      if(!ativo){
+        acao = p.pago
+          ? `<button class="btn btn-sm btn-ghost" onclick="mfMarcarParcela(${ct.id},${pn},false)" title="Estornar: esse pagamento não entrou de verdade">↩︎ Estornar</button>`
+          : `<span style="font-size:12px;color:var(--muted);" title="Contrato travado">🔒</span>`;
+      }
       else if(p.pago){ acao=`<button class="btn btn-sm btn-ghost" onclick="mfMarcarParcela(${ct.id},${pn},false)">Desfazer</button>`; }
       else { acao=`<button class="btn btn-sm btn-gold" onclick="mfMarcarParcela(${ct.id},${pn},true)">Marcar pago</button>`; }
       // Lápis de correção de data/valor só em contratos ativos
