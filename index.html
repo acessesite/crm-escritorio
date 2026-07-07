@@ -1090,11 +1090,12 @@ img, video, iframe { max-width: 100%; }
       <div class="card" style="background:var(--dark-4);margin-bottom:16px;">
         <div class="card-header"><div class="card-title" style="font-size:14px;">Novo Contrato</div></div>
         <div style="padding:14px;">
-          <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;">
             <div class="form-group"><label>Descrição *</label><input type="text" id="mf-ct-desc" placeholder="Ex: Ação Trabalhista"></div>
             <div class="form-group"><label>Valor Total R$ *</label><input type="number" id="mf-ct-total" step="0.01" placeholder="3000.00"></div>
+            <div class="form-group"><label>Dia de vencimento <span style="color:var(--muted);font-weight:400;">(que o cliente escolheu)</span></label><input type="number" id="mf-ct-diavenc" min="1" max="31" placeholder="Ex: 10"></div>
           </div>
-          <div style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5;">Crie o contrato com o <strong>valor cheio</strong>. Depois vá <strong>registrando as parcelas</strong> (valor e data) conforme o cliente for pagando — o sistema abate do total e mostra o <strong>saldo</strong>. Pode adicionar ou remover parcelas quando quiser.</div>
+          <div style="font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.5;">Crie o contrato com o <strong>valor cheio</strong> e o <strong>dia de vencimento</strong> escolhido pelo cliente. Depois vá <strong>registrando as parcelas</strong> (valor e data) — o sistema já sugere o próximo vencimento nesse dia e <strong>abate do total</strong>, mostrando o saldo. Pode adicionar ou remover parcelas quando quiser.</div>
           <div style="margin-top:14px;"><button class="btn btn-gold" onclick="mfAddContrato()">Criar Contrato</button></div>
         </div>
       </div>
@@ -2709,10 +2710,10 @@ function mfAddContrato(){
       ativosExist.forEach(a=>{ a.ativo=false; });
     }
   }
-  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,nP:0,n_parcelas:0,parcelas:[],ativo:true,tipo,origemId,criadoEm:new Date().toISOString(),criadoPor:eu()});
+  c.contratos.push({id:genId(),desc,descricao:desc,total,valor_total:total,diaVenc:(function(){const dv=parseInt(document.getElementById('mf-ct-diavenc').value);return (!isNaN(dv)&&dv>=1&&dv<=31)?dv:null;})(),nP:0,n_parcelas:0,parcelas:[],ativo:true,tipo,origemId,criadoEm:new Date().toISOString(),criadoPor:eu()});
   _touch(c);
   save();
-  ['mf-ct-desc','mf-ct-total'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['mf-ct-desc','mf-ct-total','mf-ct-diavenc'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   addAtiv((tipo==='reparcelamento'?'🔄 Reparcelamento: ':'💰 Contrato: ')+c.nome+' — '+desc);
   mfRenderFin();
 }
@@ -2820,7 +2821,9 @@ function mfRenderFin(){
     const isRep=ct.tipo==='reparcelamento';
     const origem=ct.origemId?cts.find(x=>x.id===ct.origemId):null;
     const r=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+vRec(p),0);
+    const somaParc=ct.parcelas.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
     const tot=parseFloat(ct.total||ct.valor_total||0);
+    const saldoReceber=tot-somaParc;
     const pct=tot>0?Math.round((r/tot)*100):0;
     // Tags de status no cabeçalho
     const nPagas=ct.parcelas.filter(p=>p.pago).length;
@@ -2864,22 +2867,32 @@ function mfRenderFin(){
       const lapis=(ativo&&p.pago)?` <button onclick="editarDataPag(${ct.id},${pn})" title="Corrigir data/valor" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--gold);padding:0 2px;">✏️</button>`:'';
       return`<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;font-size:13px;">Parcela ${pn}</td><td style="padding:8px;font-size:13px;font-weight:600;color:var(--gold);">${colValor}</td><td style="padding:8px;font-size:12px;color:${venc?'var(--red)':vhj?'var(--gold)':'var(--muted)'};">${vd?new Date(vd+'T12:00:00').toLocaleDateString('pt-BR'):'—'}${venc?' ⚠️':vhj?' (hoje)':''}</td><td style="padding:8px;font-size:12px;color:var(--muted);white-space:nowrap;">${p.dataPag||p.data_pagamento||'—'}${lapis}</td><td style="padding:8px;"><span class="tag ${p.pago?'tag-green':'tag-muted'}">${p.pago?'✅ Pago':'Pendente'}</span></td><td style="padding:8px;">${acao}</td></tr>`;
     }).join('') || `<tr><td colspan="6" style="padding:14px;text-align:center;font-size:12px;color:var(--muted);">Nenhuma parcela registrada ainda. Clique em <strong style="color:var(--gold)">➕ Registrar parcela</strong> conforme o cliente for pagando.</td></tr>`;
-    return`<div class="card" style="${cardStyle}"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao} ${badges}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div>${origemNota}${travadoNota}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${acoesAtivo}${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> · Saldo a receber: <strong style="color:var(--gold)">R$ ${(tot-r).toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    return`<div class="card" style="${cardStyle}"><div class="card-header"><div><div class="card-title" style="font-size:15px;">${ct.desc||ct.descricao} ${badges}</div><div style="font-size:11px;color:var(--muted);">por ${ct.criadoPor} · ${new Date(ct.criadoEm).toLocaleDateString('pt-BR')}</div>${origemNota}${travadoNota}</div><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;"><div style="text-align:right;"><div style="font-size:11px;color:var(--muted);">Total</div><div style="font-family:'Cormorant Garamond',serif;font-size:20px;">R$ ${tot.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div></div>${acoesAtivo}${isAdmin()?`<button class="btn btn-danger btn-sm" onclick="mfDelContrato(${ct.id})">🗑</button>`:''}</div></div><div style="padding:12px 16px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;"><span>Recebido: <strong style="color:var(--green)">R$ ${r.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> · Saldo a receber: <strong style="color:var(--gold)">R$ ${saldoReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong></span><span>${pct}%</span></div><div style="background:var(--dark-5);border-radius:4px;height:6px;margin-bottom:14px;"><div style="background:linear-gradient(90deg,var(--green),var(--gold));height:6px;border-radius:4px;width:${pct}%;"></div></div><table style="width:100%;"><thead><tr>${['Parcela','Valor','Vencimento','Pago em','Status',''].map(h=>`<th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;">${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }).join(''):'<div class="empty-state"><span class="icon">💰</span>Nenhum contrato.</div>';
 }
 
 // ═══════════ ADICIONAR PARCELA A CONTRATO EXISTENTE ═══════════
 let _addParcelaCt=null;
+function _diasNoMes(y,m){ return new Date(y,m+1,0).getDate(); }
+function _proxVencContrato(ct){
+  const dia=parseInt(ct&&ct.diaVenc); if(isNaN(dia)) return '';
+  const venctos=(ct.parcelas||[]).map(p=>p.vencimento||p.vencto).filter(Boolean).sort();
+  let y,m;
+  if(venctos.length){ const ult=new Date(venctos[venctos.length-1]+'T12:00:00'); y=ult.getFullYear(); m=ult.getMonth()+1; if(m>11){m=0;y++;} }
+  else { const h=new Date(); y=h.getFullYear(); m=h.getMonth(); if(h.getDate()>dia){ m++; if(m>11){m=0;y++;} } }
+  const d=new Date(y,m,Math.min(dia,_diasNoMes(y,m)),12,0,0);
+  return d.toISOString().slice(0,10);
+}
 function mfAddParcela(ctId){
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
   const ct=(c.contratos||[]).find(x=>x.id===ctId);if(!ct||!ctAtivo(ct))return;
   _addParcelaCt=ctId;
   const nAtual=ct.parcelas.length;
-  const rec=ct.parcelas.filter(p=>p.pago).reduce((s,p)=>s+vRec(p),0);
-  const saldo=(parseFloat(ct.total||ct.valor_total||0))-rec;
-  document.getElementById('map-info').innerHTML=`Contrato: <strong style="color:var(--gold);">${ct.desc||ct.descricao}</strong><br>Saldo em aberto: <strong style="color:var(--gold);">R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> · será a Parcela <strong>${nAtual+1}</strong>`;
+  const somaParc=ct.parcelas.reduce((s,p)=>s+(parseFloat(p.valor)||0),0);
+  const saldo=(parseFloat(ct.total||ct.valor_total||0))-somaParc;
+  document.getElementById('map-info').innerHTML=`Contrato: <strong style="color:var(--gold);">${ct.desc||ct.descricao}</strong><br>Saldo a receber: <strong style="color:var(--gold);">R$ ${saldo.toLocaleString('pt-BR',{minimumFractionDigits:2})}</strong> · será a Parcela <strong>${nAtual+1}</strong>`;
   document.getElementById('map-valor').value='';
-  document.getElementById('map-venc').value='';
+  document.getElementById('map-venc').value=_proxVencContrato(ct); // sugere o próximo vencimento no dia escolhido
   document.getElementById('map-pagdata').value=new Date().toISOString().slice(0,10);
   document.getElementById('map-paga').checked=false;
   mfAddParcelaToggle();
