@@ -1282,9 +1282,11 @@ if (!S.ponto) S.ponto = {};
 if (!S.atividades) S.atividades = [];
 if (!S.negociacoes) S.negociacoes = [];
 if (!S.processos) S.processos = [];
+if (!S.excluidos) S.excluidos = []; // ids de clientes excluídos (para a exclusão valer em todos os aparelhos)
 
 const extrasColab = (S.colaboradores || []).filter(c => c.id > 5);
 S.colaboradores = [...COLABS_FIXOS, ...extrasColab];
+S.clientes = _aplicaExcluidos(S.clientes); // garante que clientes excluídos não reapareçam
 
 // ═══════════ PROTEÇÃO DE DADOS (merge + backups) ═══════════
 // Marca um cliente como alterado agora (usado para resolver conflitos de sincronização)
@@ -1314,6 +1316,9 @@ function mergeClientes(a, b){
   });
   return Array.from(map.values());
 }
+// ── Marcadores de exclusão (tombstones): fazem a exclusão valer mesmo com a mesclagem ──
+function _mergeIds(a,b){ const s=new Set(); (a||[]).forEach(x=>s.add(String(x))); (b||[]).forEach(x=>s.add(String(x))); return Array.from(s); }
+function _aplicaExcluidos(lista){ const s=new Set((S.excluidos||[]).map(String)); return (lista||[]).filter(c=>c&&!s.has(String(c.id))); }
 // Backups automáticos rotativos no navegador (guarda os últimos 25 estados)
 function backupLocal(motivo){
   try{
@@ -1353,7 +1358,12 @@ function _aplicarRestauracao(obj, origem){
   const nCli = Array.isArray(obj.clientes)?obj.clientes.length:0;
   if(!confirm(`Restaurar backup ${origem}?\n\nContém ${nCli} cliente(s). Os dados serão MESCLADOS com os atuais (recupera o que faltou, sem apagar o que já existe).`)) return;
   backupLocal('antes-de-restaurar');
-  if(Array.isArray(obj.clientes)) S.clientes = mergeClientes(S.clientes, obj.clientes);
+  if(Array.isArray(obj.clientes)){
+    // Restaurar traz clientes de volta: remove seus marcadores de exclusão para não serem apagados de novo
+    const ids=new Set(obj.clientes.map(c=>String(c&&c.id)));
+    S.excluidos=(S.excluidos||[]).filter(x=>!ids.has(String(x)));
+    S.clientes = mergeClientes(S.clientes, obj.clientes);
+  }
   ['tarefas','atendimentos','vendas','atividades','negociacoes','processos'].forEach(k=>{ if(Array.isArray(obj[k]) && obj[k].length>= (S[k]||[]).length) S[k]=obj[k]; });
   if(obj.ponto && typeof obj.ponto==='object') S.ponto = {...obj.ponto, ...S.ponto};
   save();
@@ -1398,13 +1408,16 @@ function syncToFirebase() {
     // Antes de enviar, busca o remoto e MESCLA — assim nunca apagamos clientes/pagamentos de outro aparelho
     let remote=null;
     try{ remote = await fbGet('crm'); }catch(e){}
-    if(remote && Array.isArray(remote.clientes)){
-      S.clientes = mergeClientes(S.clientes, remote.clientes);
+    if(remote){
+      if(Array.isArray(remote.excluidos)) S.excluidos = _mergeIds(S.excluidos, remote.excluidos); // une as exclusões
+      if(Array.isArray(remote.clientes)) S.clientes = mergeClientes(S.clientes, remote.clientes);
+      S.clientes = _aplicaExcluidos(S.clientes); // remove os que foram excluídos (em qualquer aparelho)
       const sToSave={...S, colaboradores:S.colaboradores.filter(c=>c.id>5)};
       try{ localStorage.setItem('crm_cb', JSON.stringify(sToSave)); }catch(e){}
     }
     const data = {
       clientes: S.clientes,
+      excluidos: S.excluidos,
       tarefas: S.tarefas,
       atendimentos: S.atendimentos,
       vendas: S.vendas,
@@ -1422,8 +1435,10 @@ async function loadFromFirebase() {
   backupLocal('antes-de-carregar'); // guarda o estado local antes de mesclar
   const data = await fbGet('crm');
   if (data) {
+    if (Array.isArray(data.excluidos)) S.excluidos = _mergeIds(S.excluidos, data.excluidos); // une exclusões primeiro
     // Clientes: MESCLA (nunca substitui) para não perder ninguém que exista só localmente
     if (Array.isArray(data.clientes)) S.clientes = mergeClientes(S.clientes, data.clientes);
+    S.clientes = _aplicaExcluidos(S.clientes); // aplica as exclusões
     if (data.tarefas) S.tarefas = data.tarefas;
     if (data.atendimentos) S.atendimentos = data.atendimentos;
     if (data.vendas) S.vendas = data.vendas;
@@ -2583,6 +2598,8 @@ function confirmarDelCliente(id, event) {
 function deletarCliente(id) {
   const cli = S.clientes.find(x=>x.id===id);
   if(!cli) return;
+  if(!S.excluidos) S.excluidos=[];
+  if(!S.excluidos.map(String).includes(String(id))) S.excluidos.push(String(id)); // marcador de exclusão
   S.clientes = S.clientes.filter(x=>x.id!==id);
   S.atendimentos = S.atendimentos.filter(a=>String(a.clienteId)!==String(id));
   S.vendas = S.vendas.filter(v=>String(v.clienteId)!==String(id));
