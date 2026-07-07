@@ -699,7 +699,7 @@ img, video, iframe { max-width: 100%; }
         <label>📅 Data em que foi recebida *</label>
         <input type="date" id="map-pagdata" style="font-size:15px;padding:12px 14px;">
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:8px;">A parcela abate do valor total do contrato. Marque "já foi paga" se o cliente já pagou; senão, ela fica agendada (aparece em "a vencer" e na cobrança).</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">Registrar a parcela já a lança como <strong>paga</strong> (é quando o cliente pagou). Se quiser apenas <strong>agendar</strong> uma parcela futura para cobrança, desmarque "já foi paga". A parcela abate do valor total do contrato.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeM('m-add-parcela')">Cancelar</button>
@@ -2899,7 +2899,7 @@ function mfAddParcela(ctId){
   document.getElementById('map-valor').value='';
   document.getElementById('map-venc').value=_proxVencContrato(ct); // sugere o próximo vencimento no dia escolhido
   document.getElementById('map-pagdata').value=new Date().toISOString().slice(0,10);
-  document.getElementById('map-paga').checked=false;
+  document.getElementById('map-paga').checked=true; // padrão: registrar já como paga (é o caso mais comum)
   mfAddParcelaToggle();
   openM('m-add-parcela');
 }
