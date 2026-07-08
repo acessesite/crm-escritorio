@@ -3178,7 +3178,12 @@ function mfToggleAtivo(id){
 }
 
 function mfDelContrato(id){
+  if(!isAdmin()){ alert('🔒 Apenas administradores podem excluir contratos.'); return; }
   const c=S.clientes.find(x=>x.id==fichaId);if(!c)return;
+  const ct=(c.contratos||[]).find(x=>x.id===id);
+  const nomeCt=ct?(ct.desc||ct.descricao||'este contrato'):'este contrato';
+  const situacao=(ct&&ctAtivo(ct))?'ATIVO (novo)':'INATIVO (antigo)';
+  if(!confirm('⚠️ Excluir o contrato "'+nomeCt+'"?\n\nSituação: '+situacao+'.\nTodas as parcelas e o histórico de pagamentos deste contrato serão apagados.\n\nEsta ação NÃO pode ser desfeita.')) return;
   c.contratos=c.contratos.filter(x=>x.id!==id);
   _touch(c);
   save();mfRenderFin();
