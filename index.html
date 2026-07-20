@@ -3416,19 +3416,34 @@ function renderFinanceiro() {
       });
     });
   });
+  // Total geral a receber de TODOS os clientes juntos
+  // (o que ainda falta pagar em cada contrato ativo = valor total − o que já foi recebido)
+  let totalGeralAReceber = 0;
+  S.clientes.forEach(cli => {
+    (cli.contratos||[]).forEach(ct => {
+      if(!ctAtivo(ct)) return;
+      const tot = parseFloat(ct.total||ct.valor_total||0)||0;
+      const recebido = (ct.parcelas||[]).filter(p=>p.pago).reduce((s,p)=>s+vRec(p),0);
+      totalGeralAReceber += Math.max(0, tot - recebido);
+    });
+  });
+  const cardTotalGeral = `<div class="stat-card" style="border:1px solid var(--border-s);"><div class="stat-label">A Receber Total (todos os clientes)</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${totalGeralAReceber.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">🧾</div><div class="stat-change" style="color:var(--muted);">saldo em aberto de todos os contratos ativos</div></div>`;
+
   const stats = document.getElementById('fin-stats');
   if(finGeral){
-    stats.style.gridTemplateColumns='repeat(2,1fr)';
+    stats.style.gridTemplateColumns='repeat(3,1fr)';
     stats.innerHTML=`
-      <div class="stat-card"><div class="stat-label">A Receber</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
+      ${cardTotalGeral}
+      <div class="stat-card"><div class="stat-label">A Receber (a vencer)</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
       <div class="stat-card"><div class="stat-label">Em Atraso (Total)</div><div class="stat-val" style="font-size:22px;color:var(--red);">R$ ${atrasoMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⚠️</div></div>
     `;
   } else {
-    stats.style.gridTemplateColumns='repeat(3,1fr)';
+    stats.style.gridTemplateColumns='repeat(4,1fr)';
     stats.innerHTML=`
       <div class="stat-card"><div class="stat-label">Recebido no Mês</div><div class="stat-val" style="font-size:22px;color:var(--green);">R$ ${recMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">💰</div></div>
       <div class="stat-card"><div class="stat-label">A Receber no Mês</div><div class="stat-val" style="font-size:22px;color:var(--gold);">R$ ${aReceberMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⏳</div></div>
       <div class="stat-card"><div class="stat-label">Em Atraso no Mês</div><div class="stat-val" style="font-size:22px;color:var(--red);">R$ ${atrasoMes.toLocaleString('pt-BR',{minimumFractionDigits:2})}</div><div class="stat-icon">⚠️</div></div>
+      ${cardTotalGeral}
     `;
   }
   pagamentos.sort((a,b)=>b.dataPag.localeCompare(a.dataPag));
